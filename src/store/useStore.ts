@@ -27,6 +27,30 @@ interface StoreState {
   resumeTimer: () => Promise<void>;
   stopTimer: () => Promise<TimeEntry | null>;
   discardTimer: () => Promise<void>;
+
+  addEntry: (input: AddEntryInput) => Promise<TimeEntry>;
+  updateEntry: (id: string, patch: UpdateEntryInput) => Promise<void>;
+  deleteEntry: (id: string) => Promise<void>;
+}
+
+export interface AddEntryInput {
+  categoryId: string | null;
+  taskTitle: string;
+  color: string;
+  source?: Source;
+  startedAt: number;
+  endedAt: number;
+  durationMs: number;
+  note?: string | null;
+}
+
+export type UpdateEntryInput = Partial<
+  Pick<TimeEntry, 'categoryId' | 'taskTitle' | 'color' | 'startedAt' | 'endedAt' | 'durationMs' | 'note'>
+>;
+
+/** Keep entries newest-first by start time. */
+function sortEntries(entries: TimeEntry[]): TimeEntry[] {
+  return [...entries].sort((a, b) => b.startedAt - a.startedAt);
 }
 
 /** Convert the current active timer into a saved entry (or null if too short). */
@@ -128,5 +152,41 @@ export const useStore = create<StoreState>((set, get) => ({
   discardTimer: async () => {
     set({ activeTimer: null });
     await repo.saveActiveTimer(null);
+  },
+
+  addEntry: async (input) => {
+    const now = Date.now();
+    const entry: TimeEntry = {
+      id: newId(),
+      categoryId: input.categoryId,
+      taskTitle: input.taskTitle,
+      note: input.note ?? null,
+      startedAt: input.startedAt,
+      endedAt: input.endedAt,
+      durationMs: input.durationMs,
+      source: input.source ?? 'local',
+      color: input.color,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const entries = sortEntries([entry, ...get().entries]);
+    set({ entries });
+    await repo.saveEntries(entries);
+    return entry;
+  },
+
+  updateEntry: async (id, patch) => {
+    const now = Date.now();
+    const entries = sortEntries(
+      get().entries.map((e) => (e.id === id ? { ...e, ...patch, updatedAt: now } : e)),
+    );
+    set({ entries });
+    await repo.saveEntries(entries);
+  },
+
+  deleteEntry: async (id) => {
+    const entries = get().entries.filter((e) => e.id !== id);
+    set({ entries });
+    await repo.saveEntries(entries);
   },
 }));

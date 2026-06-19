@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { AppHeader } from '@/components/AppHeader';
+import { EntryRow } from '@/components/EntryRow';
 import { useStore, type StartTimerInput } from '@/store/useStore';
 import { useNow } from '@/features/timer/useNow';
 import { computeElapsed, formatHMS } from '@/lib/time';
@@ -12,10 +14,13 @@ import type { Category } from '@/db/types';
 export default function TimerScreen() {
   const activeTimer = useStore((s) => s.activeTimer);
   const categories = useStore((s) => s.categories);
+  const entries = useStore((s) => s.entries);
   const startTimer = useStore((s) => s.startTimer);
   const pauseTimer = useStore((s) => s.pauseTimer);
   const resumeTimer = useStore((s) => s.resumeTimer);
   const stopTimer = useStore((s) => s.stopTimer);
+
+  const recentEntries = useMemo(() => entries.slice(0, 5), [entries]);
 
   const [customTitle, setCustomTitle] = useState('');
 
@@ -56,7 +61,19 @@ export default function TimerScreen() {
 
   return (
     <Screen>
-      <AppHeader />
+      <AppHeader
+        right={
+          <Pressable
+            onPress={() => {
+              tapFeedback();
+              router.push('/entry');
+            }}
+            hitSlop={8}
+            className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container-low">
+            <MaterialIcons name="add" size={24} color="#142175" />
+          </Pressable>
+        }
+      />
       <ScrollView
         contentContainerClassName="items-center px-lg pb-xl pt-lg"
         keyboardShouldPersistTaps="handled">
@@ -162,6 +179,24 @@ export default function TimerScreen() {
             })}
           </View>
         </View>
+
+        {/* Recent entries */}
+        {recentEntries.length > 0 ? (
+          <View className="mt-xl w-full">
+            <Text className="mb-sm font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
+              Recent
+            </Text>
+            <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
+              {recentEntries.map((entry) => (
+                <EntryRow
+                  key={entry.id}
+                  entry={entry}
+                  onPress={() => router.push({ pathname: '/entry', params: { id: entry.id } })}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </Screen>
   );

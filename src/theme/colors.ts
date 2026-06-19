@@ -41,6 +41,6 @@ export const darkColors: typeof lightColors = {
 
 export type AppColors = typeof lightColors;
 
-export function getColors(scheme: 'light' | 'dark' | null | undefined): AppColors {
+export function getColors(scheme: string | null | undefined): AppColors {
   return scheme === 'dark' ? darkColors : lightColors;
 }

@@ -1,4 +1,4 @@
-import { useColorScheme } from 'react-native';
+import { useColorScheme, type ColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getColors } from '@/theme/colors';
@@ -9,8 +9,9 @@ export default function TabsLayout() {
   const scheme = useColorScheme();
   const c = getColors(scheme);
 
-  const icon = (name: IconName) =>
-    ({ color, size }: { color: string; size: number }) => (
+  const icon =
+    (name: IconName) =>
+    ({ color, size }: { focused: boolean; color: ColorValue; size: number }) => (
       <MaterialIcons name={name} color={color} size={size} />
     );
 
