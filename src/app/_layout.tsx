@@ -17,16 +17,22 @@ import {
 } from '@expo-google-fonts/inter';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { useStore } from '@/store/useStore';
+import { useAuth } from '@/store/useAuth';
+import { useSyncController } from '@/sync/useSyncController';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const system = useColorScheme();
   const hydrate = useStore((s) => s.hydrate);
+  const initAuth = useAuth((s) => s.init);
 
   useEffect(() => {
     hydrate();
-  }, [hydrate]);
+    initAuth();
+  }, [hydrate, initAuth]);
+
+  useSyncController();
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -57,6 +63,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="entry" options={{ presentation: 'modal' }} />
           <Stack.Screen name="category" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="auth" options={{ presentation: 'modal' }} />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

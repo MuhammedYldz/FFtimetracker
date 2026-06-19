@@ -1,7 +1,7 @@
 import type { Category } from './types';
 
 /** Built-in work categories so a new user can track time with zero setup. */
-export const DEFAULT_CATEGORIES: Omit<Category, 'createdAt'>[] = [
+export const DEFAULT_CATEGORIES: Omit<Category, 'createdAt' | 'updatedAt'>[] = [
   { id: 'cat-development', name: 'Development', color: '#006a61', icon: 'code', isDefault: true, archived: false, source: 'local', externalId: null, sortOrder: 0 },
   { id: 'cat-testing', name: 'Testing', color: '#6750a4', icon: 'fact-check', isDefault: true, archived: false, source: 'local', externalId: null, sortOrder: 1 },
   { id: 'cat-meeting', name: 'Meeting', color: '#b3261e', icon: 'groups', isDefault: true, archived: false, source: 'local', externalId: null, sortOrder: 2 },

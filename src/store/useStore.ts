@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ActiveTimer, Category, Source, TimeEntry } from '@/db/types';
+import type { ActiveTimer, Category, Source, TimeEntry, Tombstone } from '@/db/types';
 import * as repo from '@/db/repository';
 import { newId } from '@/lib/id';
 import { computeElapsed } from '@/lib/time';
@@ -20,8 +20,14 @@ interface StoreState {
   categories: Category[];
   entries: TimeEntry[];
   activeTimer: ActiveTimer | null;
+  tombstones: Tombstone[];
 
   hydrate: () => Promise<void>;
+  replaceData: (data: {
+    categories: Category[];
+    entries: TimeEntry[];
+    tombstones: Tombstone[];
+  }) => Promise<void>;
   startTimer: (input: StartTimerInput) => Promise<void>;
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
@@ -61,6 +67,11 @@ function sortEntries(entries: TimeEntry[]): TimeEntry[] {
   return [...entries].sort((a, b) => b.startedAt - a.startedAt);
 }
 
+/** Add or update a tombstone for a deleted row. */
+function upsertTombstone(tombstones: Tombstone[], t: Tombstone): Tombstone[] {
+  return [...tombstones.filter((x) => x.id !== t.id), t];
+}
+
 /** Convert the current active timer into a saved entry (or null if too short). */
 function timerToEntry(t: ActiveTimer, now: number): TimeEntry | null {
   const durationMs = computeElapsed(t.accumulatedMs, t.segmentStartedAt, t.isRunning, now);
@@ -85,14 +96,26 @@ export const useStore = create<StoreState>((set, get) => ({
   categories: [],
   entries: [],
   activeTimer: null,
+  tombstones: [],
 
   hydrate: async () => {
-    const [categories, entries, activeTimer] = await Promise.all([
+    const [categories, entries, activeTimer, tombstones] = await Promise.all([
       repo.loadCategories(),
       repo.loadEntries(),
       repo.loadActiveTimer(),
+      repo.loadTombstones(),
     ]);
-    set({ categories, entries, activeTimer, hydrated: true });
+    set({ categories, entries, activeTimer, tombstones, hydrated: true });
+  },
+
+  replaceData: async ({ categories, entries, tombstones }) => {
+    const sorted = sortEntries(entries);
+    set({ categories, entries: sorted, tombstones });
+    await Promise.all([
+      repo.saveCategories(categories),
+      repo.saveEntries(sorted),
+      repo.saveTombstones(tombstones),
+    ]);
   },
 
   startTimer: async (input) => {
@@ -193,9 +216,11 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   deleteEntry: async (id) => {
+    const now = Date.now();
     const entries = get().entries.filter((e) => e.id !== id);
-    set({ entries });
-    await repo.saveEntries(entries);
+    const tombstones = upsertTombstone(get().tombstones, { id, type: 'entry', updatedAt: now });
+    set({ entries, tombstones });
+    await Promise.all([repo.saveEntries(entries), repo.saveTombstones(tombstones)]);
   },
 
   addCategory: async (input) => {
@@ -212,6 +237,7 @@ export const useStore = create<StoreState>((set, get) => ({
       externalId: null,
       sortOrder: maxSort + 1,
       createdAt: now,
+      updatedAt: now,
     };
     const categories = [...get().categories, category];
     set({ categories });
@@ -220,20 +246,28 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateCategory: async (id, patch) => {
-    const categories = get().categories.map((c) => (c.id === id ? { ...c, ...patch } : c));
+    const now = Date.now();
+    const categories = get().categories.map((c) =>
+      c.id === id ? { ...c, ...patch, updatedAt: now } : c,
+    );
     set({ categories });
     await repo.saveCategories(categories);
   },
 
   setCategoryArchived: async (id, archived) => {
-    const categories = get().categories.map((c) => (c.id === id ? { ...c, archived } : c));
+    const now = Date.now();
+    const categories = get().categories.map((c) =>
+      c.id === id ? { ...c, archived, updatedAt: now } : c,
+    );
     set({ categories });
     await repo.saveCategories(categories);
   },
 
   deleteCategory: async (id) => {
+    const now = Date.now();
     const categories = get().categories.filter((c) => c.id !== id);
-    set({ categories });
-    await repo.saveCategories(categories);
+    const tombstones = upsertTombstone(get().tombstones, { id, type: 'category', updatedAt: now });
+    set({ categories, tombstones });
+    await Promise.all([repo.saveCategories(categories), repo.saveTombstones(tombstones)]);
   },
 }));

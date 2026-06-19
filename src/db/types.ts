@@ -11,6 +11,14 @@ export interface Category {
   externalId: string | null;
   sortOrder: number;
   createdAt: number;
+  updatedAt: number;
+}
+
+/** Tombstone for a deleted row, so deletes propagate across devices on sync. */
+export interface Tombstone {
+  id: string;
+  type: 'entry' | 'category';
+  updatedAt: number;
 }
 
 export interface TimeEntry {

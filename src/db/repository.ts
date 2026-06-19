@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ActiveTimer, Category, TimeEntry } from './types';
+import type { ActiveTimer, Category, TimeEntry, Tombstone } from './types';
 import { DEFAULT_CATEGORIES } from './defaults';
 
 /**
@@ -12,6 +12,7 @@ const KEYS = {
   categories: 'ff:categories:v1',
   entries: 'ff:entries:v1',
   activeTimer: 'ff:activeTimer:v1',
+  tombstones: 'ff:tombstones:v1',
   seeded: 'ff:seeded:v1',
 } as const;
 
@@ -34,7 +35,11 @@ export async function loadCategories(): Promise<Category[]> {
   const seeded = await AsyncStorage.getItem(KEYS.seeded);
   if (!seeded) {
     const now = Date.now();
-    const seededCats: Category[] = DEFAULT_CATEGORIES.map((c) => ({ ...c, createdAt: now }));
+    const seededCats: Category[] = DEFAULT_CATEGORIES.map((c) => ({
+      ...c,
+      createdAt: now,
+      updatedAt: now,
+    }));
     await writeJSON(KEYS.categories, seededCats);
     await AsyncStorage.setItem(KEYS.seeded, '1');
     return seededCats;
@@ -68,4 +73,14 @@ export async function saveActiveTimer(timer: ActiveTimer | null): Promise<void> 
   } else {
     await writeJSON(KEYS.activeTimer, timer);
   }
+}
+
+// --- Tombstones (deleted-row markers, for sync) ---------------------------
+
+export async function loadTombstones(): Promise<Tombstone[]> {
+  return readJSON<Tombstone[]>(KEYS.tombstones, []);
+}
+
+export async function saveTombstones(tombstones: Tombstone[]): Promise<void> {
+  await writeJSON(KEYS.tombstones, tombstones);
 }
