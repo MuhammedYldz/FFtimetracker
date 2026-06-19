@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Material 3 semantic color tokens — light theme.
+   Values are space-separated RGB channels so Tailwind alpha modifiers work. */
+:root {
+  --color-background: 247 249 251;
+  --color-surface: 247 249 251;
+  --color-surface-dim: 216 218 220;
+  --color-surface-bright: 247 249 251;
+  --color-surface-container-lowest: 255 255 255;
+  --color-surface-container-low: 242 244 246;
+  --color-surface-container: 236 238 240;
+  --color-surface-container-high: 230 232 234;
+  --color-surface-container-highest: 224 227 229;
+  --color-surface-variant: 224 227 229;
+  --color-on-surface: 25 28 30;
+  --color-on-surface-variant: 69 70 81;
+  --color-on-background: 25 28 30;
+  --color-primary: 20 33 117;
+  --color-on-primary: 255 255 255;
+  --color-primary-container: 46 58 140;
+  --color-on-primary-container: 158 169 255;
+  --color-primary-fixed: 223 224 255;
+  --color-primary-fixed-dim: 188 195 255;
+  --color-secondary: 0 106 97;
+  --color-on-secondary: 255 255 255;
+  --color-secondary-container: 134 242 228;
+  --color-on-secondary-container: 0 111 102;
+  --color-secondary-fixed: 137 245 231;
+  --color-secondary-fixed-dim: 107 216 203;
+  --color-tertiary: 14 0 157;
+  --color-on-tertiary: 255 255 255;
+  --color-tertiary-container: 41 39 186;
+  --color-on-tertiary-container: 164 167 255;
+  --color-error: 186 26 26;
+  --color-on-error: 255 255 255;
+  --color-error-container: 255 218 214;
+  --color-on-error-container: 147 0 10;
+  --color-outline: 118 118 130;
+  --color-outline-variant: 198 197 211;
+  --color-inverse-surface: 45 49 51;
+  --color-inverse-on-surface: 239 241 243;
+  --color-inverse-primary: 188 195 255;
+}
+
+/* Material 3 semantic color tokens — dark theme. */
+.dark:root {
+  --color-background: 17 20 24;
+  --color-surface: 17 20 24;
+  --color-surface-dim: 17 20 24;
+  --color-surface-bright: 55 58 62;
+  --color-surface-container-lowest: 12 15 18;
+  --color-surface-container-low: 25 28 32;
+  --color-surface-container: 29 32 36;
+  --color-surface-container-high: 39 42 46;
+  --color-surface-container-highest: 50 53 58;
+  --color-surface-variant: 69 70 81;
+  --color-on-surface: 226 226 233;
+  --color-on-surface-variant: 198 197 211;
+  --color-on-background: 226 226 233;
+  --color-primary: 188 195 255;
+  --color-on-primary: 0 13 96;
+  --color-primary-container: 46 58 140;
+  --color-on-primary-container: 223 224 255;
+  --color-primary-fixed: 223 224 255;
+  --color-primary-fixed-dim: 188 195 255;
+  --color-secondary: 107 216 203;
+  --color-on-secondary: 0 56 47;
+  --color-secondary-container: 0 80 73;
+  --color-on-secondary-container: 137 245 231;
+  --color-secondary-fixed: 137 245 231;
+  --color-secondary-fixed-dim: 107 216 203;
+  --color-tertiary: 192 193 255;
+  --color-on-tertiary: 7 0 108;
+  --color-tertiary-container: 47 46 190;
+  --color-on-tertiary-container: 225 224 255;
+  --color-error: 255 180 171;
+  --color-on-error: 105 0 5;
+  --color-error-container: 147 0 10;
+  --color-on-error-container: 255 218 214;
+  --color-outline: 144 144 156;
+  --color-outline-variant: 69 70 81;
+  --color-inverse-surface: 226 226 233;
+  --color-inverse-on-surface: 45 49 51;
+  --color-inverse-primary: 20 33 117;
+}
