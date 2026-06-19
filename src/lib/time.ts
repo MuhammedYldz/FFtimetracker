@@ -76,6 +76,51 @@ export function formatLongDate(epochMs: number): string {
   return `${full[d.getDay()]}, ${d.getDate()} ${fullMonths[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** Local Monday 00:00 of the week containing epochMs. */
+export function startOfWeek(epochMs: number): number {
+  const d = new Date(startOfDay(epochMs));
+  const offset = (d.getDay() + 6) % 7; // days since Monday
+  return addDays(d.getTime(), -offset);
+}
+
+/** Local 1st-of-month 00:00. */
+export function startOfMonth(epochMs: number): number {
+  const d = new Date(epochMs);
+  return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+}
+
+/** Local last-day-of-month 00:00. */
+export function endOfMonthDay(epochMs: number): number {
+  const d = new Date(epochMs);
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getTime();
+}
+
+export function addMonths(epochMs: number, n: number): number {
+  const d = new Date(epochMs);
+  return new Date(d.getFullYear(), d.getMonth() + n, 1).getTime();
+}
+
+/** "June 2026". */
+export function formatMonthYear(epochMs: number): string {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  const d = new Date(epochMs);
+  return `${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/**
+ * A 6x7 grid of day-start epochs for the month containing epochMs, Monday-first.
+ * Leading/trailing days belong to adjacent months (for full weeks).
+ */
+export function monthGrid(epochMs: number): number[] {
+  const first = startOfMonth(epochMs);
+  const leading = (new Date(first).getDay() + 6) % 7; // Mondays-first offset
+  const gridStart = addDays(first, -leading);
+  return Array.from({ length: 42 }, (_, i) => startOfDay(addDays(gridStart, i)));
+}
+
 /** Combine a day (epoch) with an "HH:MM" clock string into an epoch ms; null if invalid. */
 export function clockToEpoch(dayEpoch: number, hhmm: string): number | null {
   const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
