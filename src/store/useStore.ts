@@ -31,6 +31,14 @@ interface StoreState {
   addEntry: (input: AddEntryInput) => Promise<TimeEntry>;
   updateEntry: (id: string, patch: UpdateEntryInput) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
+
+  addCategory: (input: { name: string; color: string; icon: string }) => Promise<Category>;
+  updateCategory: (
+    id: string,
+    patch: Partial<Pick<Category, 'name' | 'color' | 'icon'>>,
+  ) => Promise<void>;
+  setCategoryArchived: (id: string, archived: boolean) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
 }
 
 export interface AddEntryInput {
@@ -188,5 +196,44 @@ export const useStore = create<StoreState>((set, get) => ({
     const entries = get().entries.filter((e) => e.id !== id);
     set({ entries });
     await repo.saveEntries(entries);
+  },
+
+  addCategory: async (input) => {
+    const now = Date.now();
+    const maxSort = get().categories.reduce((m, c) => Math.max(m, c.sortOrder), -1);
+    const category: Category = {
+      id: newId(),
+      name: input.name,
+      color: input.color,
+      icon: input.icon,
+      isDefault: false,
+      archived: false,
+      source: 'local',
+      externalId: null,
+      sortOrder: maxSort + 1,
+      createdAt: now,
+    };
+    const categories = [...get().categories, category];
+    set({ categories });
+    await repo.saveCategories(categories);
+    return category;
+  },
+
+  updateCategory: async (id, patch) => {
+    const categories = get().categories.map((c) => (c.id === id ? { ...c, ...patch } : c));
+    set({ categories });
+    await repo.saveCategories(categories);
+  },
+
+  setCategoryArchived: async (id, archived) => {
+    const categories = get().categories.map((c) => (c.id === id ? { ...c, archived } : c));
+    set({ categories });
+    await repo.saveCategories(categories);
+  },
+
+  deleteCategory: async (id) => {
+    const categories = get().categories.filter((c) => c.id !== id);
+    set({ categories });
+    await repo.saveCategories(categories);
   },
 }));
