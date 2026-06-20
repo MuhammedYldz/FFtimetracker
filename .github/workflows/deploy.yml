@@ -1,0 +1,49 @@
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # App is served from https://<user>.github.io/FFtimetracker/
+      EXPO_BASE_URL: /FFtimetracker
+      # Public, client-safe Supabase values (protected by Row-Level Security).
+      EXPO_PUBLIC_SUPABASE_URL: https://qibpekilusjnksyccmcc.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpYnBla2lsdXNqbmtzeWNjbWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NjkxNDIsImV4cCI6MjA5NzQ0NTE0Mn0.bHj9lN_0-I59dpI9hcY5UPxZnF5IWLPmLkM_IV4bKE8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx expo export --platform web
+      # GitHub Pages has no SPA fallback; serve index.html for unknown routes.
+      - run: cp dist/index.html dist/404.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
