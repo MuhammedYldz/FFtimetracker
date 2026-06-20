@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
 import { useSyncStatus } from '@/store/useSyncStatus';
+import { mergeTable, type Node } from './merge';
 import type { Category, Source, TimeEntry, Tombstone } from '@/db/types';
 
 /**
@@ -111,54 +112,6 @@ function fromRemoteEntry(r: RemoteEntry): TimeEntry {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
-}
-
-interface Node<T> {
-  id: string;
-  updatedAt: number;
-  deleted: boolean;
-  row?: T;
-}
-
-interface MergeResult<T> {
-  liveRows: T[]; // non-deleted winners
-  tombstoneIds: { id: string; updatedAt: number }[]; // deleted winners
-  toUpsert: T[]; // local newer & alive -> push full row
-  toMarkDeleted: { id: string; updatedAt: number }[]; // local newer & deleted -> mark remote deleted
-}
-
-/** Merge local and remote nodes for one table by last-write-wins. */
-function mergeTable<T>(local: Node<T>[], remote: Node<T>[]): MergeResult<T> {
-  const localMap = new Map(local.map((n) => [n.id, n]));
-  const remoteMap = new Map(remote.map((n) => [n.id, n]));
-  const ids = new Set([...localMap.keys(), ...remoteMap.keys()]);
-
-  const result: MergeResult<T> = { liveRows: [], tombstoneIds: [], toUpsert: [], toMarkDeleted: [] };
-
-  for (const id of ids) {
-    const l = localMap.get(id);
-    const r = remoteMap.get(id);
-    // Winner: greater updatedAt; tie or local-only -> local; remote-only -> remote.
-    const localWins = l && (!r || l.updatedAt >= r.updatedAt);
-    const winner = localWins ? l! : r!;
-
-    if (winner.deleted) {
-      result.tombstoneIds.push({ id, updatedAt: winner.updatedAt });
-    } else if (winner.row) {
-      result.liveRows.push(winner.row);
-    }
-
-    // Push when local is the winner and remote is missing or older.
-    if (localWins && (!r || l!.updatedAt > r.updatedAt)) {
-      if (l!.deleted) {
-        if (r) result.toMarkDeleted.push({ id, updatedAt: l!.updatedAt });
-      } else if (l!.row) {
-        result.toUpsert.push(l!.row);
-      }
-    }
-  }
-
-  return result;
 }
 
 let syncing = false;
