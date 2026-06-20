@@ -1,13 +1,67 @@
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { useState } from 'react';
+import { View, Text, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { AppHeader } from '@/components/AppHeader';
 import { useAuth, isSupabaseConfigured } from '@/store/useAuth';
+import { useStore } from '@/store/useStore';
 import { useSyncStatus } from '@/store/useSyncStatus';
 import { syncNow } from '@/sync/sync';
+import { fetchCustomTasks } from '@/integrations/customApi';
 import { formatClock } from '@/lib/time';
 import { tapFeedback } from '@/lib/haptics';
+import type { Connection } from '@/db/types';
+
+function ConnectionRow({ conn }: { conn: Connection }) {
+  const setSyncedTasksForConnection = useStore((s) => s.setSyncedTasksForConnection);
+  const taskCount = useStore((s) => s.syncedTasks.filter((t) => t.connectionId === conn.id).length);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    const result = await fetchCustomTasks(conn);
+    if (result.ok) await setSyncedTasksForConnection(conn.id, result.tasks);
+    else setError(result.error ?? 'Refresh failed');
+    setRefreshing(false);
+  };
+
+  return (
+    <View className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md gap-sm">
+      <View className="flex-row items-center gap-sm">
+        <View className="h-11 w-11 items-center justify-center rounded-lg bg-[#454651]">
+          <MaterialIcons name="api" size={24} color="#ffffff" />
+        </View>
+        <View className="flex-1">
+          <Text className="font-sans-semibold text-body-md text-on-surface">{conn.name}</Text>
+          <Text className="font-sans text-body-sm text-on-surface-variant" numberOfLines={1}>
+            {error ? error : `${taskCount} task${taskCount === 1 ? '' : 's'} synced`}
+          </Text>
+        </View>
+      </View>
+      <View className="flex-row gap-sm">
+        <Pressable
+          onPress={refresh}
+          disabled={refreshing}
+          className="flex-1 flex-row items-center justify-center gap-xs rounded-lg bg-primary py-sm active:opacity-80">
+          {refreshing ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          ) : (
+            <MaterialIcons name="sync" size={18} color="#ffffff" />
+          )}
+          <Text className="font-sans-medium text-body-sm text-on-primary">Refresh</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push({ pathname: '/connection', params: { id: conn.id } })}
+          className="flex-row items-center justify-center rounded-lg border border-outline-variant px-md py-sm active:opacity-70">
+          <Text className="font-sans-medium text-body-sm text-on-surface">Edit</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
 
 function IntegrationCard({
   name,
@@ -42,11 +96,12 @@ export default function ConnectScreen() {
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const { phase, lastSyncedAt, error } = useSyncStatus();
+  const customConnections = useStore((s) => s.connections.filter((c) => c.type === 'custom'));
 
   return (
     <Screen>
       <AppHeader title="Connect" />
-      <View className="gap-lg p-md">
+      <ScrollView contentContainerClassName="gap-lg p-md">
         {/* Account & sync */}
         <View className="gap-sm">
           <Text className="font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
@@ -138,11 +193,39 @@ export default function ConnectScreen() {
           )}
         </View>
 
-        {/* Integrations (Phase 6) */}
+        {/* Integrations */}
         <View className="gap-sm">
           <Text className="font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
             Integrations
           </Text>
+
+          {customConnections.map((c) => (
+            <ConnectionRow key={c.id} conn={c} />
+          ))}
+
+          {/* Custom API — active */}
+          <Pressable
+            onPress={() => {
+              tapFeedback();
+              router.push('/connection');
+            }}
+            className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md active:opacity-80">
+            <View className="flex-row items-center gap-sm">
+              <View className="h-11 w-11 items-center justify-center rounded-lg bg-[#454651]">
+                <MaterialIcons name="api" size={24} color="#ffffff" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-semibold text-body-md text-on-surface">
+                  {customConnections.length ? 'Add another Custom API' : 'Custom API'}
+                </Text>
+                <Text className="font-sans text-body-sm text-on-surface-variant">
+                  Connect any in-house system.
+                </Text>
+              </View>
+              <MaterialIcons name="add" size={22} color="#142175" />
+            </View>
+          </Pressable>
+
           <IntegrationCard
             name="Jira"
             description="Log time against assigned issues."
@@ -155,14 +238,8 @@ export default function ConnectScreen() {
             icon="code"
             color="#0078D7"
           />
-          <IntegrationCard
-            name="Custom API"
-            description="Connect any in-house system."
-            icon="api"
-            color="#454651"
-          />
         </View>
-      </View>
+      </ScrollView>
     </Screen>
   );
 }

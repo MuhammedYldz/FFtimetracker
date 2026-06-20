@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ActiveTimer, Category, TimeEntry, Tombstone } from './types';
+import type { ActiveTimer, Category, Connection, SyncedTask, TimeEntry, Tombstone } from './types';
 import { DEFAULT_CATEGORIES } from './defaults';
 
 /**
@@ -13,6 +13,8 @@ const KEYS = {
   entries: 'ff:entries:v1',
   activeTimer: 'ff:activeTimer:v1',
   tombstones: 'ff:tombstones:v1',
+  connections: 'ff:connections:v1',
+  syncedTasks: 'ff:syncedTasks:v1',
   seeded: 'ff:seeded:v1',
 } as const;
 
@@ -83,4 +85,22 @@ export async function loadTombstones(): Promise<Tombstone[]> {
 
 export async function saveTombstones(tombstones: Tombstone[]): Promise<void> {
   await writeJSON(KEYS.tombstones, tombstones);
+}
+
+// --- Integrations: connections & synced tasks -----------------------------
+
+export async function loadConnections(): Promise<Connection[]> {
+  return readJSON<Connection[]>(KEYS.connections, []);
+}
+
+export async function saveConnections(connections: Connection[]): Promise<void> {
+  await writeJSON(KEYS.connections, connections);
+}
+
+export async function loadSyncedTasks(): Promise<SyncedTask[]> {
+  return readJSON<SyncedTask[]>(KEYS.syncedTasks, []);
+}
+
+export async function saveSyncedTasks(tasks: SyncedTask[]): Promise<void> {
+  await writeJSON(KEYS.syncedTasks, tasks);
 }

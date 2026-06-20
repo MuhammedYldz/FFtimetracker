@@ -15,6 +15,7 @@ export default function TimerScreen() {
   const activeTimer = useStore((s) => s.activeTimer);
   const categories = useStore((s) => s.categories);
   const entries = useStore((s) => s.entries);
+  const syncedTasks = useStore((s) => s.syncedTasks);
   const startTimer = useStore((s) => s.startTimer);
   const pauseTimer = useStore((s) => s.pauseTimer);
   const resumeTimer = useStore((s) => s.resumeTimer);
@@ -179,6 +180,40 @@ export default function TimerScreen() {
             })}
           </View>
         </View>
+
+        {/* Synced tasks */}
+        {syncedTasks.length > 0 ? (
+          <View className="mt-xl w-full">
+            <Text className="mb-sm font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
+              Synced tasks
+            </Text>
+            <View className="flex-row flex-wrap gap-xs">
+              {syncedTasks.slice(0, 12).map((task) => {
+                const isCurrent = activeTimer?.taskTitle === task.title && activeTimer?.source === task.source;
+                return (
+                  <Pressable
+                    key={task.id}
+                    onPress={() =>
+                      start({
+                        categoryId: null,
+                        taskTitle: task.title,
+                        color: task.color,
+                        source: task.source,
+                      })
+                    }
+                    className={`max-w-full flex-row items-center gap-xs rounded-full border px-sm py-xs active:opacity-70 ${
+                      isCurrent ? 'border-primary bg-primary-fixed' : 'border-outline-variant bg-surface-container-lowest'
+                    }`}>
+                    <MaterialIcons name="sync" size={14} color={task.color} />
+                    <Text className="font-sans-medium text-body-sm text-on-surface" numberOfLines={1}>
+                      {task.title}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
 
         {/* Recent entries */}
         {recentEntries.length > 0 ? (

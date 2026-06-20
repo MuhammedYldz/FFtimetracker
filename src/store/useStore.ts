@@ -1,5 +1,13 @@
 import { create } from 'zustand';
-import type { ActiveTimer, Category, Source, TimeEntry, Tombstone } from '@/db/types';
+import type {
+  ActiveTimer,
+  Category,
+  Connection,
+  Source,
+  SyncedTask,
+  TimeEntry,
+  Tombstone,
+} from '@/db/types';
 import * as repo from '@/db/repository';
 import { newId } from '@/lib/id';
 import { computeElapsed } from '@/lib/time';
@@ -21,6 +29,8 @@ interface StoreState {
   entries: TimeEntry[];
   activeTimer: ActiveTimer | null;
   tombstones: Tombstone[];
+  connections: Connection[];
+  syncedTasks: SyncedTask[];
 
   hydrate: () => Promise<void>;
   replaceData: (data: {
@@ -45,6 +55,11 @@ interface StoreState {
   ) => Promise<void>;
   setCategoryArchived: (id: string, archived: boolean) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
+
+  addConnection: (conn: Connection) => Promise<void>;
+  updateConnection: (id: string, patch: Partial<Connection>) => Promise<void>;
+  deleteConnection: (id: string) => Promise<void>;
+  setSyncedTasksForConnection: (connectionId: string, tasks: SyncedTask[]) => Promise<void>;
 }
 
 export interface AddEntryInput {
@@ -97,15 +112,20 @@ export const useStore = create<StoreState>((set, get) => ({
   entries: [],
   activeTimer: null,
   tombstones: [],
+  connections: [],
+  syncedTasks: [],
 
   hydrate: async () => {
-    const [categories, entries, activeTimer, tombstones] = await Promise.all([
-      repo.loadCategories(),
-      repo.loadEntries(),
-      repo.loadActiveTimer(),
-      repo.loadTombstones(),
-    ]);
-    set({ categories, entries, activeTimer, tombstones, hydrated: true });
+    const [categories, entries, activeTimer, tombstones, connections, syncedTasks] =
+      await Promise.all([
+        repo.loadCategories(),
+        repo.loadEntries(),
+        repo.loadActiveTimer(),
+        repo.loadTombstones(),
+        repo.loadConnections(),
+        repo.loadSyncedTasks(),
+      ]);
+    set({ categories, entries, activeTimer, tombstones, connections, syncedTasks, hydrated: true });
   },
 
   replaceData: async ({ categories, entries, tombstones }) => {
@@ -269,5 +289,33 @@ export const useStore = create<StoreState>((set, get) => ({
     const tombstones = upsertTombstone(get().tombstones, { id, type: 'category', updatedAt: now });
     set({ categories, tombstones });
     await Promise.all([repo.saveCategories(categories), repo.saveTombstones(tombstones)]);
+  },
+
+  addConnection: async (conn) => {
+    const connections = [...get().connections, conn];
+    set({ connections });
+    await repo.saveConnections(connections);
+  },
+
+  updateConnection: async (id, patch) => {
+    const connections = get().connections.map((c) =>
+      c.id === id ? { ...c, ...patch, updatedAt: Date.now() } : c,
+    );
+    set({ connections });
+    await repo.saveConnections(connections);
+  },
+
+  deleteConnection: async (id) => {
+    const connections = get().connections.filter((c) => c.id !== id);
+    const syncedTasks = get().syncedTasks.filter((t) => t.connectionId !== id);
+    set({ connections, syncedTasks });
+    await Promise.all([repo.saveConnections(connections), repo.saveSyncedTasks(syncedTasks)]);
+  },
+
+  setSyncedTasksForConnection: async (connectionId, tasks) => {
+    const others = get().syncedTasks.filter((t) => t.connectionId !== connectionId);
+    const syncedTasks = [...others, ...tasks];
+    set({ syncedTasks });
+    await repo.saveSyncedTasks(syncedTasks);
   },
 }));
