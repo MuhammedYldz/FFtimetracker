@@ -1,10 +1,13 @@
-import { useMemo } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, ScrollView, Pressable } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { AppHeader } from '@/components/AppHeader';
 import { EntryRow } from '@/components/EntryRow';
 import { useStore } from '@/store/useStore';
+import { exportEntriesCsv } from '@/lib/export';
+import { tapFeedback } from '@/lib/haptics';
 import {
   entriesInRange,
   groupByCategory,
@@ -42,7 +45,16 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 export default function StatsScreen() {
   const entries = useStore((s) => s.entries);
   const categories = useStore((s) => s.categories);
+  const tasks = useStore((s) => s.tasks);
+  const [exportError, setExportError] = useState<string | null>(null);
   const now = Date.now();
+
+  const onExport = async () => {
+    tapFeedback();
+    setExportError(null);
+    const result = await exportEntriesCsv(entries, categories, tasks);
+    if (!result.ok) setExportError(result.error ?? 'Export failed');
+  };
 
   const todayStart = startOfDay(now);
   const weekStart = startOfWeek(now);
@@ -82,7 +94,18 @@ export default function StatsScreen() {
 
   return (
     <Screen>
-      <AppHeader title="Dashboard" />
+      <AppHeader
+        title="Dashboard"
+        right={
+          <Pressable
+            onPress={onExport}
+            hitSlop={8}
+            accessibilityLabel="Export entries to CSV"
+            className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+            <MaterialIcons name="file-download" size={22} color="#142175" />
+          </Pressable>
+        }
+      />
       <ScrollView contentContainerClassName="p-md gap-md">
         {/* Totals */}
         <View className="flex-row gap-sm">
@@ -90,6 +113,9 @@ export default function StatsScreen() {
           <StatCard label="This week" value={formatDurationShort(weekMs)} />
           <StatCard label="This month" value={formatDurationShort(monthMs)} />
         </View>
+        {exportError ? (
+          <Text className="font-sans-medium text-body-sm text-error">{exportError}</Text>
+        ) : null}
 
         {/* Weekly goal + bar chart */}
         <Card title="This week">
