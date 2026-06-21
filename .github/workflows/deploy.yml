@@ -20,6 +20,8 @@ jobs:
     env:
       # App is served from https://<user>.github.io/FFtimetracker/
       EXPO_BASE_URL: /FFtimetracker
+      # Full app URL for auth email redirects (confirmation / password reset).
+      EXPO_PUBLIC_APP_URL: https://muhammedyldz.github.io/FFtimetracker/
       # Public, client-safe Supabase values (protected by Row-Level Security).
       EXPO_PUBLIC_SUPABASE_URL: https://qibpekilusjnksyccmcc.supabase.co
       EXPO_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpYnBla2lsdXNqbmtzeWNjbWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NjkxNDIsImV4cCI6MjA5NzQ0NTE0Mn0.bHj9lN_0-I59dpI9hcY5UPxZnF5IWLPmLkM_IV4bKE8

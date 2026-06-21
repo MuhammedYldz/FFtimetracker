@@ -2,7 +2,7 @@
 -- Soft-delete (deleted flag) + updated_at enable safe multi-device sync.
 
 create table if not exists public.categories (
-  id uuid primary key,
+  id text primary key,
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
   color text not null,
@@ -20,7 +20,7 @@ create table if not exists public.categories (
 create table if not exists public.time_entries (
   id uuid primary key,
   user_id uuid not null references auth.users (id) on delete cascade,
-  category_id uuid,
+  category_id text,
   task_title text not null,
   note text,
   started_at bigint not null,

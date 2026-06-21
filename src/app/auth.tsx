@@ -11,6 +11,7 @@ type Mode = 'signin' | 'signup';
 export default function AuthScreen() {
   const signIn = useAuth((s) => s.signIn);
   const signUp = useAuth((s) => s.signUp);
+  const sendPasswordReset = useAuth((s) => s.sendPasswordReset);
 
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
@@ -50,6 +51,21 @@ export default function AuthScreen() {
         router.back();
       }
     }
+  };
+
+  const forgotPassword = async () => {
+    setError(null);
+    setInfo(null);
+    const e = email.trim();
+    if (!e) {
+      setError('Enter your email above first, then tap reset.');
+      return;
+    }
+    setBusy(true);
+    const { error } = await sendPasswordReset(e);
+    setBusy(false);
+    if (error) return setError(error);
+    setInfo('If an account exists for that email, a reset link is on its way.');
   };
 
   return (
@@ -134,6 +150,15 @@ export default function AuthScreen() {
               : 'Already have an account? Sign in'}
           </Text>
         </Pressable>
+
+        {mode === 'signin' ? (
+          <Pressable
+            onPress={forgotPassword}
+            disabled={busy}
+            className="items-center py-xs transition-opacity hover:opacity-90 active:opacity-70">
+            <Text className="font-sans text-body-sm text-on-surface-variant">Forgot password?</Text>
+          </Pressable>
+        ) : null}
       </View>
       </View>
     </SafeAreaView>

@@ -25,6 +25,7 @@ export interface StartTimerInput {
 
 interface StoreState {
   hydrated: boolean;
+  scope: string;
   categories: Category[];
   entries: TimeEntry[];
   activeTimer: ActiveTimer | null;
@@ -32,7 +33,8 @@ interface StoreState {
   connections: Connection[];
   syncedTasks: SyncedTask[];
 
-  hydrate: () => Promise<void>;
+  /** Load data for an identity scope ('anon' or 'u:<userId>'). */
+  switchScope: (scope: string) => Promise<void>;
   replaceData: (data: {
     categories: Category[];
     entries: TimeEntry[];
@@ -108,6 +110,7 @@ function timerToEntry(t: ActiveTimer, now: number): TimeEntry | null {
 
 export const useStore = create<StoreState>((set, get) => ({
   hydrated: false,
+  scope: 'anon',
   categories: [],
   entries: [],
   activeTimer: null,
@@ -115,7 +118,8 @@ export const useStore = create<StoreState>((set, get) => ({
   connections: [],
   syncedTasks: [],
 
-  hydrate: async () => {
+  switchScope: async (scope) => {
+    repo.setScope(scope);
     const [categories, entries, activeTimer, tombstones, connections, syncedTasks] =
       await Promise.all([
         repo.loadCategories(),
@@ -125,7 +129,16 @@ export const useStore = create<StoreState>((set, get) => ({
         repo.loadConnections(),
         repo.loadSyncedTasks(),
       ]);
-    set({ categories, entries, activeTimer, tombstones, connections, syncedTasks, hydrated: true });
+    set({
+      scope,
+      categories,
+      entries,
+      activeTimer,
+      tombstones,
+      connections,
+      syncedTasks,
+      hydrated: true,
+    });
   },
 
   replaceData: async ({ categories, entries, tombstones }) => {
