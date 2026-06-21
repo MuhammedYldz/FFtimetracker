@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { AppHeader } from '@/components/AppHeader';
 import { EntryRow } from '@/components/EntryRow';
+import { SyncedTasks } from '@/components/SyncedTasks';
 import { useStore, type StartTimerInput } from '@/store/useStore';
 import { useNow } from '@/features/timer/useNow';
 import { computeElapsed, formatHMS } from '@/lib/time';
@@ -17,7 +18,6 @@ export default function TimerScreen() {
   const categories = useStore((s) => s.categories);
   const tasks = useStore((s) => s.tasks);
   const entries = useStore((s) => s.entries);
-  const syncedTasks = useStore((s) => s.syncedTasks);
   const startTimer = useStore((s) => s.startTimer);
   const pauseTimer = useStore((s) => s.pauseTimer);
   const resumeTimer = useStore((s) => s.resumeTimer);
@@ -87,15 +87,19 @@ export default function TimerScreen() {
       <ScrollView
         contentContainerClassName="items-center px-lg pb-xl pt-xl"
         keyboardShouldPersistTaps="handled">
-        {/* Timer display — gradient ring with an inner surface disc */}
-        <View className="h-64 w-64 items-center justify-center rounded-full" style={heroShadow as object}>
+        {/* Timer display — gradient ring with an inner surface disc.
+            Explicit pixel sizes keep the ring thickness identical on web + native. */}
+        <View
+          style={[{ width: 256, height: 256, borderRadius: 128, alignItems: 'center', justifyContent: 'center' }, heroShadow as object]}>
           <LinearGradient
             colors={ringGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', borderRadius: 9999 }}
+            style={{ position: 'absolute', top: 0, left: 0, width: 256, height: 256, borderRadius: 128 }}
           />
-          <View className="h-[214px] w-[214px] items-center justify-center rounded-full bg-surface-container-high">
+          <View
+            style={{ width: 206, height: 206, borderRadius: 103 }}
+            className="items-center justify-center bg-surface-container-high">
             <Text className="font-mono text-[44px] leading-[52px] text-on-surface">
               {formatHMS(elapsedMs)}
             </Text>
@@ -237,41 +241,14 @@ export default function TimerScreen() {
           </View>
         ) : null}
 
-        {/* Synced tasks */}
-        {syncedTasks.length > 0 ? (
-          <View className="mt-xl w-full">
-            <Text className="mb-sm font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
-              Synced tasks
-            </Text>
-            <View className="flex-row flex-wrap gap-xs">
-              {syncedTasks.slice(0, 12).map((task) => {
-                const isCurrent = activeTimer?.taskTitle === task.title && activeTimer?.source === task.source;
-                return (
-                  <Pressable
-                    key={task.id}
-                    onPress={() =>
-                      start({
-                        categoryId: null,
-                        taskTitle: task.title,
-                        color: task.color,
-                        source: task.source,
-                      })
-                    }
-                    className={`max-w-full flex-row items-center gap-xs rounded-full border px-sm py-xs transition-colors hover:bg-surface-container-low active:opacity-70 ${
-                      isCurrent ? 'border-primary bg-primary-fixed' : 'border-outline-variant bg-surface-container-lowest'
-                    }`}>
-                    <MaterialIcons name="sync" size={14} color={task.color} />
-                    <Text
-                      className={`font-sans-medium text-body-sm ${isCurrent ? 'text-on-primary-fixed' : 'text-on-surface'}`}
-                      numberOfLines={1}>
-                      {task.title}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        ) : null}
+        {/* Integrated tasks (grouped by app, searchable) */}
+        <View className="mt-xl w-full">
+          <SyncedTasks
+            onStart={(task) =>
+              start({ categoryId: null, taskTitle: task.title, color: task.color, source: task.source })
+            }
+          />
+        </View>
 
         {/* Recent entries */}
         {recentEntries.length > 0 ? (

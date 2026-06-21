@@ -34,6 +34,17 @@ export const PROVIDERS: Record<
   },
 };
 
+/** Display metadata for every entry/task source (icon name is a MaterialIcons glyph). */
+export const SOURCE_DISPLAY: Record<Source, { label: string; color: string; icon: string }> = {
+  local: { label: 'Manual', color: '#006a61', icon: 'schedule' },
+  todoist: { label: 'Todoist', color: '#e44332', icon: 'check-circle' },
+  github: { label: 'GitHub', color: '#24292e', icon: 'code' },
+  notion: { label: 'Notion', color: '#111111', icon: 'description' },
+  custom: { label: 'Custom', color: '#454651', icon: 'api' },
+  jira: { label: 'Jira', color: '#0052cc', icon: 'integration-instructions' },
+  azure: { label: 'Azure', color: '#0078d7', icon: 'code' },
+};
+
 const truncate = (s: string, n = 120) => (s.length > n ? s.slice(0, n) : s);
 
 async function fetchTodoist(conn: Connection, token: string): Promise<FetchResult> {

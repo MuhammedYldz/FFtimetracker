@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { AppHeader } from '@/components/AppHeader';
+import { SyncedTasks } from '@/components/SyncedTasks';
 import { useStore } from '@/store/useStore';
 import { tapFeedback } from '@/lib/haptics';
 import { formatDurationShort } from '@/lib/time';
@@ -134,6 +135,7 @@ export default function TasksScreen() {
     [categories],
   );
 
+  const startTimer = useStore((s) => s.startTimer);
   const addRoute = segment === 'tasks' ? '/task' : '/category';
 
   return (
@@ -177,6 +179,15 @@ export default function TasksScreen() {
               <MaterialIcons name="add" size={20} color="#142175" />
               <Text className="font-sans-medium text-body-md text-primary">New task</Text>
             </Pressable>
+
+            <View className="mt-lg">
+              <SyncedTasks
+                onStart={(task) => {
+                  startTimer({ categoryId: null, taskTitle: task.title, color: task.color, source: task.source });
+                  router.navigate('/');
+                }}
+              />
+            </View>
           </View>
         ) : (
           <View className="gap-lg">

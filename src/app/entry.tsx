@@ -59,6 +59,9 @@ export default function EntryScreen() {
     [categories],
   );
   const selectedCategory = visibleCategories.find((c) => c.id === selectedCategoryId) ?? null;
+  // Entries pulled from an integration: name/type are owned by the source app,
+  // so only the time/date/note can be edited here.
+  const isIntegrated = !!editing && editing.source !== 'local';
 
   const resolveTask = (): { categoryId: string | null; taskTitle: string; color: string } | null => {
     if (selectedCategory) {
@@ -90,8 +93,9 @@ export default function EntryScreen() {
   };
 
   const onSave = async () => {
-    const task = resolveTask();
-    if (!task) {
+    // Integrated entries keep their task/type; only times + note change.
+    const task = isIntegrated ? null : resolveTask();
+    if (!isIntegrated && !task) {
       setError('Pick a category or type what you worked on.');
       return;
     }
@@ -106,9 +110,10 @@ export default function EntryScreen() {
     }
     successFeedback();
     if (editing) {
-      await updateEntry(editing.id, { ...task, ...times, note: note.trim() || null });
+      const patch = isIntegrated ? { ...times, note: note.trim() || null } : { ...task!, ...times, note: note.trim() || null };
+      await updateEntry(editing.id, patch);
     } else {
-      await addEntry({ ...task, ...times, note: note.trim() || null, source: 'local' });
+      await addEntry({ ...task!, ...times, note: note.trim() || null, source: 'local' });
     }
     router.back();
   };
@@ -238,7 +243,23 @@ export default function EntryScreen() {
           )}
         </View>
 
-        {/* Task selection */}
+        {/* Task selection (locked for integrated entries) */}
+        {isIntegrated ? (
+          <View className="gap-xs border-t border-outline-variant pt-lg">
+            <Text className="font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
+              Task
+            </Text>
+            <View className="flex-row items-center gap-sm rounded-lg border border-outline-variant bg-surface-container px-sm py-sm">
+              <MaterialIcons name="lock" size={16} color="#767682" />
+              <Text className="flex-1 font-sans-medium text-body-md text-on-surface" numberOfLines={1}>
+                {editing!.taskTitle}
+              </Text>
+            </View>
+            <Text className="font-sans text-label-md text-on-surface-variant">
+              From {editing!.source}. Only the time, date, and note can be edited here.
+            </Text>
+          </View>
+        ) : (
         <View className="gap-sm border-t border-outline-variant pt-lg">
           <Text className="font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
             Task
@@ -281,6 +302,7 @@ export default function EntryScreen() {
             />
           </View>
         </View>
+        )}
 
         {/* Notes */}
         <View className="gap-xs">
