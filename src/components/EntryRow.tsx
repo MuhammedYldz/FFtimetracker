@@ -5,9 +5,12 @@ import { formatClock, formatHMS } from '@/lib/time';
 
 const SOURCE_ICON: Record<string, keyof typeof MaterialIcons.glyphMap> = {
   local: 'schedule',
+  todoist: 'check-circle',
+  github: 'code',
+  notion: 'description',
+  custom: 'api',
   jira: 'sync',
   azure: 'sync',
-  custom: 'api',
 };
 
 /** A single time-entry row: color dot, title, time range, duration. Tappable to edit. */

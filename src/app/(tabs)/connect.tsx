@@ -9,21 +9,41 @@ import { useStore } from '@/store/useStore';
 import { useSyncStatus } from '@/store/useSyncStatus';
 import { useTheme, type ThemePref } from '@/store/useTheme';
 import { syncNow } from '@/sync/sync';
-import { fetchCustomTasks } from '@/integrations/customApi';
+import { fetchTasksForConnection } from '@/integrations/providers';
 import { formatClock } from '@/lib/time';
 import { tapFeedback } from '@/lib/haptics';
 import type { Connection } from '@/db/types';
+
+const CONNECTOR_META: Record<
+  Connection['type'],
+  { label: string; description: string; icon: keyof typeof MaterialIcons.glyphMap; color: string; editPath: string }
+> = {
+  todoist: { label: 'Todoist', description: 'Pull your active tasks.', icon: 'check-circle', color: '#e44332', editPath: '/provider' },
+  github: { label: 'GitHub', description: 'Pull issues assigned to you.', icon: 'code', color: '#24292e', editPath: '/provider' },
+  notion: { label: 'Notion', description: 'Pull items from a database.', icon: 'description', color: '#111111', editPath: '/provider' },
+  custom: { label: 'Custom API', description: 'Connect any in-house system.', icon: 'api', color: '#454651', editPath: '/connection' },
+  jira: { label: 'Jira', description: 'Jira issues.', icon: 'integration-instructions', color: '#0052CC', editPath: '/connection' },
+  azure: { label: 'Azure DevOps', description: 'Azure work items.', icon: 'code', color: '#0078D7', editPath: '/connection' },
+};
+
+function editRoute(conn: Connection) {
+  const meta = CONNECTOR_META[conn.type];
+  return meta.editPath === '/provider'
+    ? { pathname: '/provider' as const, params: { type: conn.type, id: conn.id } }
+    : { pathname: '/connection' as const, params: { id: conn.id } };
+}
 
 function ConnectionRow({ conn }: { conn: Connection }) {
   const setSyncedTasksForConnection = useStore((s) => s.setSyncedTasksForConnection);
   const taskCount = useStore((s) => s.syncedTasks.filter((t) => t.connectionId === conn.id).length);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const meta = CONNECTOR_META[conn.type];
 
   const refresh = async () => {
     setRefreshing(true);
     setError(null);
-    const result = await fetchCustomTasks(conn);
+    const result = await fetchTasksForConnection(conn);
     if (result.ok) await setSyncedTasksForConnection(conn.id, result.tasks);
     else setError(result.error ?? 'Refresh failed');
     setRefreshing(false);
@@ -32,12 +52,12 @@ function ConnectionRow({ conn }: { conn: Connection }) {
   return (
     <View className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md gap-sm">
       <View className="flex-row items-center gap-sm">
-        <View className="h-11 w-11 items-center justify-center rounded-lg bg-[#454651]">
-          <MaterialIcons name="api" size={24} color="#ffffff" />
+        <View className="h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: meta.color }}>
+          <MaterialIcons name={meta.icon} size={24} color="#ffffff" />
         </View>
         <View className="flex-1">
           <Text className="font-sans-semibold text-body-md text-on-surface">{conn.name}</Text>
-          <Text className="font-sans text-body-sm text-on-surface-variant" numberOfLines={1}>
+          <Text className={`font-sans text-body-sm ${error ? 'text-error' : 'text-on-surface-variant'}`} numberOfLines={1}>
             {error ? error : `${taskCount} task${taskCount === 1 ? '' : 's'} synced`}
           </Text>
         </View>
@@ -55,7 +75,7 @@ function ConnectionRow({ conn }: { conn: Connection }) {
           <Text className="font-sans-medium text-body-sm text-on-primary">Refresh</Text>
         </Pressable>
         <Pressable
-          onPress={() => router.push({ pathname: '/connection', params: { id: conn.id } })}
+          onPress={() => router.push(editRoute(conn))}
           className="flex-row items-center justify-center rounded-lg border border-outline-variant px-md py-sm transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-medium text-body-sm text-on-surface">Edit</Text>
         </Pressable>
@@ -64,32 +84,26 @@ function ConnectionRow({ conn }: { conn: Connection }) {
   );
 }
 
-function IntegrationCard({
-  name,
-  description,
-  icon,
-  color,
-}: {
-  name: string;
-  description: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
-  color: string;
-}) {
+function ConnectCard({ type, onConnect }: { type: Connection['type']; onConnect: () => void }) {
+  const meta = CONNECTOR_META[type];
   return (
-    <View className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+    <Pressable
+      onPress={onConnect}
+      className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md transition-colors hover:bg-surface-container-low active:opacity-80">
       <View className="flex-row items-center gap-sm">
-        <View className="h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: color }}>
-          <MaterialIcons name={icon} size={24} color="#ffffff" />
+        <View className="h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: meta.color }}>
+          <MaterialIcons name={meta.icon} size={24} color="#ffffff" />
         </View>
         <View className="flex-1">
-          <Text className="font-sans-semibold text-body-md text-on-surface">{name}</Text>
-          <Text className="font-sans text-body-sm text-on-surface-variant">{description}</Text>
+          <Text className="font-sans-semibold text-body-md text-on-surface">{meta.label}</Text>
+          <Text className="font-sans text-body-sm text-on-surface-variant">{meta.description}</Text>
         </View>
-        <View className="rounded-full bg-surface-container-high px-sm py-base">
-          <Text className="font-sans-medium text-label-md text-on-surface-variant">Soon</Text>
+        <View className="flex-row items-center gap-base rounded-full bg-primary-fixed px-sm py-base">
+          <MaterialIcons name="add" size={14} color="#152473" />
+          <Text className="font-sans-medium text-label-md text-on-primary-fixed">Connect</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -103,9 +117,11 @@ export default function ConnectScreen() {
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const { phase, lastSyncedAt, error } = useSyncStatus();
-  const customConnections = useStore((s) => s.connections.filter((c) => c.type === 'custom'));
+  const connections = useStore((s) => s.connections);
   const themePref = useTheme((s) => s.pref);
   const setThemePref = useTheme((s) => s.setPref);
+
+  const connByType = (t: Connection['type']) => connections.filter((c) => c.type === t);
 
   return (
     <Screen>
@@ -241,44 +257,33 @@ export default function ConnectScreen() {
             Integrations
           </Text>
 
-          {customConnections.map((c) => (
+          {(['todoist', 'github', 'notion'] as const).map((type) => {
+            const conns = connByType(type);
+            if (conns.length > 0) {
+              return conns.map((c) => <ConnectionRow key={c.id} conn={c} />);
+            }
+            return (
+              <ConnectCard
+                key={type}
+                type={type}
+                onConnect={() => {
+                  tapFeedback();
+                  router.push({ pathname: '/provider', params: { type } });
+                }}
+              />
+            );
+          })}
+
+          {/* Custom API */}
+          {connByType('custom').map((c) => (
             <ConnectionRow key={c.id} conn={c} />
           ))}
-
-          {/* Custom API — active */}
-          <Pressable
-            onPress={() => {
+          <ConnectCard
+            type="custom"
+            onConnect={() => {
               tapFeedback();
               router.push('/connection');
             }}
-            className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md transition-opacity hover:opacity-90 active:opacity-80">
-            <View className="flex-row items-center gap-sm">
-              <View className="h-11 w-11 items-center justify-center rounded-lg bg-[#454651]">
-                <MaterialIcons name="api" size={24} color="#ffffff" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-semibold text-body-md text-on-surface">
-                  {customConnections.length ? 'Add another Custom API' : 'Custom API'}
-                </Text>
-                <Text className="font-sans text-body-sm text-on-surface-variant">
-                  Connect any in-house system.
-                </Text>
-              </View>
-              <MaterialIcons name="add" size={22} color="#142175" />
-            </View>
-          </Pressable>
-
-          <IntegrationCard
-            name="Jira"
-            description="Log time against assigned issues."
-            icon="integration-instructions"
-            color="#0052CC"
-          />
-          <IntegrationCard
-            name="Azure DevOps"
-            description="Import work items and push time."
-            icon="code"
-            color="#0078D7"
           />
         </View>
       </ScrollView>
