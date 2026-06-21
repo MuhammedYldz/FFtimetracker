@@ -81,7 +81,7 @@ export default function TasksScreen() {
               tapFeedback();
               router.push('/category');
             }}
-            className="mt-sm flex-row items-center justify-center gap-xs rounded-lg border border-dashed border-outline py-sm active:opacity-70">
+            className="mt-sm flex-row items-center justify-center gap-xs rounded-lg border border-dashed border-outline py-sm transition-colors hover:bg-surface-container-low active:opacity-70">
             <MaterialIcons name="add" size={20} color="#142175" />
             <Text className="font-sans-medium text-body-md text-primary">New category</Text>
           </Pressable>

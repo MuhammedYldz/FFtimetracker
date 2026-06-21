@@ -74,14 +74,15 @@ export default function CategoryScreen() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-surface">
+      <View className="w-full flex-1 self-center" style={{ maxWidth: 640 }}>
       <View className="h-16 flex-row items-center justify-between border-b border-outline-variant px-md">
-        <Pressable onPress={() => router.back()} className="py-xs active:opacity-70">
+        <Pressable onPress={() => router.back()} className="py-xs transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-medium text-body-md text-on-surface-variant">Cancel</Text>
         </Pressable>
         <Text className="font-sans-semibold text-body-md text-on-surface">
           {editing ? 'Edit Category' : 'New Category'}
         </Text>
-        <Pressable onPress={onSave} className="py-xs active:opacity-70">
+        <Pressable onPress={onSave} className="py-xs transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-bold text-body-md text-primary">Save</Text>
         </Pressable>
       </View>
@@ -169,7 +170,7 @@ export default function CategoryScreen() {
           <View className="gap-sm border-t border-outline-variant pt-lg">
             <Pressable
               onPress={onToggleArchive}
-              className="flex-row items-center justify-center gap-xs rounded-lg border border-outline-variant py-sm active:opacity-70">
+              className="flex-row items-center justify-center gap-xs rounded-lg border border-outline-variant py-sm transition-opacity hover:opacity-90 active:opacity-70">
               <MaterialIcons
                 name={editing.archived ? 'unarchive' : 'archive'}
                 size={20}
@@ -181,13 +182,14 @@ export default function CategoryScreen() {
             </Pressable>
             <Pressable
               onPress={onDelete}
-              className="flex-row items-center justify-center gap-xs rounded-lg border border-error py-sm active:opacity-70">
+              className="flex-row items-center justify-center gap-xs rounded-lg border border-error py-sm transition-opacity hover:opacity-90 active:opacity-70">
               <MaterialIcons name="delete-outline" size={20} color="#ba1a1a" />
               <Text className="font-sans-medium text-body-md text-error">Delete category</Text>
             </Pressable>
           </View>
         ) : null}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

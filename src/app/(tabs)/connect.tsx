@@ -45,7 +45,7 @@ function ConnectionRow({ conn }: { conn: Connection }) {
         <Pressable
           onPress={refresh}
           disabled={refreshing}
-          className="flex-1 flex-row items-center justify-center gap-xs rounded-lg bg-primary py-sm active:opacity-80">
+          className="flex-1 flex-row items-center justify-center gap-xs rounded-lg bg-primary py-sm transition-opacity hover:opacity-90 active:opacity-80">
           {refreshing ? (
             <ActivityIndicator color="#ffffff" size="small" />
           ) : (
@@ -55,7 +55,7 @@ function ConnectionRow({ conn }: { conn: Connection }) {
         </Pressable>
         <Pressable
           onPress={() => router.push({ pathname: '/connection', params: { id: conn.id } })}
-          className="flex-row items-center justify-center rounded-lg border border-outline-variant px-md py-sm active:opacity-70">
+          className="flex-row items-center justify-center rounded-lg border border-outline-variant px-md py-sm transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-medium text-body-sm text-on-surface">Edit</Text>
         </Pressable>
       </View>
@@ -150,7 +150,7 @@ export default function ConnectScreen() {
                     syncNow();
                   }}
                   disabled={phase === 'syncing'}
-                  className="flex-1 flex-row items-center justify-center gap-xs rounded-lg bg-primary py-sm active:opacity-80">
+                  className="flex-1 flex-row items-center justify-center gap-xs rounded-lg bg-primary py-sm transition-opacity hover:opacity-90 active:opacity-80">
                   {phase === 'syncing' ? (
                     <ActivityIndicator color="#ffffff" size="small" />
                   ) : (
@@ -163,7 +163,7 @@ export default function ConnectScreen() {
                     tapFeedback();
                     signOut();
                   }}
-                  className="flex-row items-center justify-center gap-xs rounded-lg border border-outline-variant px-md py-sm active:opacity-70">
+                  className="flex-row items-center justify-center gap-xs rounded-lg border border-outline-variant px-md py-sm transition-opacity hover:opacity-90 active:opacity-70">
                   <Text className="font-sans-medium text-body-md text-on-surface">Sign out</Text>
                 </Pressable>
               </View>
@@ -174,7 +174,7 @@ export default function ConnectScreen() {
                 tapFeedback();
                 router.push('/auth');
               }}
-              className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md active:opacity-80">
+              className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md transition-opacity hover:opacity-90 active:opacity-80">
               <View className="flex-row items-center gap-sm">
                 <View className="h-11 w-11 items-center justify-center rounded-full bg-primary-fixed">
                   <MaterialIcons name="cloud-sync" size={24} color="#142175" />
@@ -209,7 +209,7 @@ export default function ConnectScreen() {
               tapFeedback();
               router.push('/connection');
             }}
-            className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md active:opacity-80">
+            className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md transition-opacity hover:opacity-90 active:opacity-80">
             <View className="flex-row items-center gap-sm">
               <View className="h-11 w-11 items-center justify-center rounded-lg bg-[#454651]">
                 <MaterialIcons name="api" size={24} color="#ffffff" />

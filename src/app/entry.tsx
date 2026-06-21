@@ -131,15 +131,16 @@ export default function EntryScreen() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-surface">
+      <View className="w-full flex-1 self-center" style={{ maxWidth: 640 }}>
       {/* Header */}
       <View className="h-16 flex-row items-center justify-between border-b border-outline-variant px-md">
-        <Pressable onPress={() => router.back()} className="py-xs active:opacity-70">
+        <Pressable onPress={() => router.back()} className="py-xs transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-medium text-body-md text-on-surface-variant">Cancel</Text>
         </Pressable>
         <Text className="font-sans-semibold text-body-md text-on-surface">
           {editing ? 'Edit Entry' : 'Add Manual Entry'}
         </Text>
-        <Pressable onPress={onSave} className="py-xs active:opacity-70">
+        <Pressable onPress={onSave} className="py-xs transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-bold text-body-md text-primary">Save</Text>
         </Pressable>
       </View>
@@ -153,7 +154,7 @@ export default function EntryScreen() {
           <View className="flex-row items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest px-sm py-xs">
             <Pressable
               onPress={() => setDay((d) => addDays(d, -1))}
-              className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container-low">
+              className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
               <MaterialIcons name="chevron-left" size={24} color="#454651" />
             </Pressable>
             <Text className="font-sans-semibold text-body-md text-on-surface">
@@ -161,7 +162,7 @@ export default function EntryScreen() {
             </Text>
             <Pressable
               onPress={() => setDay((d) => addDays(d, 1))}
-              className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container-low">
+              className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
               <MaterialIcons name="chevron-right" size={24} color="#454651" />
             </Pressable>
           </View>
@@ -179,7 +180,7 @@ export default function EntryScreen() {
                 setMode((m) => (m === 'duration' ? 'startend' : 'duration'));
                 setError(null);
               }}
-              className="active:opacity-70">
+              className="transition-opacity hover:opacity-90 active:opacity-70">
               <Text className="font-sans-medium text-label-md text-primary">
                 {mode === 'duration' ? 'Switch to start/end time' : 'Switch to duration'}
               </Text>
@@ -249,7 +250,7 @@ export default function EntryScreen() {
                     setSelectedCategoryId(sel ? null : cat.id);
                     setError(null);
                   }}
-                  className={`flex-row items-center gap-xs rounded-full border px-sm py-xs active:opacity-70 ${
+                  className={`flex-row items-center gap-xs rounded-full border px-sm py-xs transition-opacity hover:opacity-90 active:opacity-70 ${
                     sel ? 'border-primary bg-primary-fixed' : 'border-outline-variant bg-surface-container-lowest'
                   }`}>
                   <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
@@ -298,12 +299,13 @@ export default function EntryScreen() {
         {editing ? (
           <Pressable
             onPress={onDelete}
-            className="mt-sm flex-row items-center justify-center gap-xs rounded-lg border border-error py-sm active:opacity-70">
+            className="mt-sm flex-row items-center justify-center gap-xs rounded-lg border border-error py-sm transition-opacity hover:opacity-90 active:opacity-70">
             <MaterialIcons name="delete-outline" size={20} color="#ba1a1a" />
             <Text className="font-sans-medium text-body-md text-error">Delete entry</Text>
           </Pressable>
         ) : null}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

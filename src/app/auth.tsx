@@ -54,8 +54,9 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-surface">
+      <View className="w-full flex-1 self-center" style={{ maxWidth: 440 }}>
       <View className="h-16 flex-row items-center justify-between border-b border-outline-variant px-md">
-        <Pressable onPress={() => router.back()} className="py-xs active:opacity-70">
+        <Pressable onPress={() => router.back()} className="py-xs transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-medium text-body-md text-on-surface-variant">Cancel</Text>
         </Pressable>
         <Text className="font-sans-semibold text-body-md text-on-surface">
@@ -110,7 +111,7 @@ export default function AuthScreen() {
         <Pressable
           onPress={submit}
           disabled={busy}
-          className="flex-row items-center justify-center gap-xs rounded-lg bg-primary py-sm active:opacity-80">
+          className="flex-row items-center justify-center gap-xs rounded-lg bg-primary py-sm transition-opacity hover:opacity-90 active:opacity-80">
           {busy ? (
             <ActivityIndicator color="#ffffff" />
           ) : (
@@ -126,13 +127,14 @@ export default function AuthScreen() {
             setError(null);
             setInfo(null);
           }}
-          className="items-center py-xs active:opacity-70">
+          className="items-center py-xs transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-medium text-body-sm text-primary">
             {mode === 'signin'
               ? "Don't have an account? Create one"
               : 'Already have an account? Sign in'}
           </Text>
         </Pressable>
+      </View>
       </View>
     </SafeAreaView>
   );

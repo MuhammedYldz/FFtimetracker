@@ -64,7 +64,7 @@ export default function CalendarScreen() {
           <View className="flex-row items-center gap-xs">
             <Pressable
               onPress={() => setMonthEpoch((m) => addMonths(m, -1))}
-              className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container-low">
+              className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
               <MaterialIcons name="chevron-left" size={24} color="#454651" />
             </Pressable>
             <Pressable
@@ -72,12 +72,12 @@ export default function CalendarScreen() {
                 setMonthEpoch(startOfMonth(now));
                 setSelectedDay(startOfDay(now));
               }}
-              className="rounded border border-outline-variant px-sm py-xs active:bg-surface-container-low">
+              className="rounded border border-outline-variant px-sm py-xs transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
               <Text className="font-sans-medium text-body-sm text-on-surface">Today</Text>
             </Pressable>
             <Pressable
               onPress={() => setMonthEpoch((m) => addMonths(m, 1))}
-              className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container-low">
+              className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
               <MaterialIcons name="chevron-right" size={24} color="#454651" />
             </Pressable>
           </View>
@@ -155,7 +155,7 @@ export default function CalendarScreen() {
                   router.push({ pathname: '/entry', params: { date: String(selectedDay) } })
                 }
                 hitSlop={8}
-                className="h-8 w-8 items-center justify-center rounded-full active:bg-surface-container-low">
+                className="h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
                 <MaterialIcons name="add" size={22} color="#142175" />
               </Pressable>
             </View>

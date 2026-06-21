@@ -165,14 +165,15 @@ export default function ConnectionScreen() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-surface">
+      <View className="w-full flex-1 self-center" style={{ maxWidth: 640 }}>
       <View className="h-16 flex-row items-center justify-between border-b border-outline-variant px-md">
-        <Pressable onPress={() => router.back()} className="py-xs active:opacity-70">
+        <Pressable onPress={() => router.back()} className="py-xs transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-medium text-body-md text-on-surface-variant">Cancel</Text>
         </Pressable>
         <Text className="font-sans-semibold text-body-md text-on-surface">
           {editing ? 'Edit Custom API' : 'Custom API'}
         </Text>
-        <Pressable onPress={onSave} disabled={busy} className="py-xs active:opacity-70">
+        <Pressable onPress={onSave} disabled={busy} className="py-xs transition-opacity hover:opacity-90 active:opacity-70">
           <Text className="font-sans-bold text-body-md text-primary">Save</Text>
         </Pressable>
       </View>
@@ -200,7 +201,7 @@ export default function ConnectionScreen() {
                 <Pressable
                   key={o.value}
                   onPress={() => setAuthMethod(o.value)}
-                  className={`rounded-full border px-sm py-xs active:opacity-70 ${
+                  className={`rounded-full border px-sm py-xs transition-opacity hover:opacity-90 active:opacity-70 ${
                     sel ? 'border-primary bg-primary-fixed' : 'border-outline-variant bg-surface-container-lowest'
                   }`}>
                   <Text className="font-sans-medium text-body-sm text-on-surface">{o.label}</Text>
@@ -246,7 +247,7 @@ export default function ConnectionScreen() {
         <Pressable
           onPress={onTest}
           disabled={busy}
-          className="flex-row items-center justify-center gap-xs rounded-lg border border-primary py-sm active:opacity-70">
+          className="flex-row items-center justify-center gap-xs rounded-lg border border-primary py-sm transition-opacity hover:opacity-90 active:opacity-70">
           {busy ? <ActivityIndicator color="#142175" size="small" /> : null}
           <Text className="font-sans-medium text-body-md text-primary">Test connection</Text>
         </Pressable>
@@ -254,11 +255,12 @@ export default function ConnectionScreen() {
         {editing ? (
           <Pressable
             onPress={onDelete}
-            className="flex-row items-center justify-center gap-xs rounded-lg border border-error py-sm active:opacity-70">
+            className="flex-row items-center justify-center gap-xs rounded-lg border border-error py-sm transition-opacity hover:opacity-90 active:opacity-70">
             <Text className="font-sans-medium text-body-md text-error">Remove connection</Text>
           </Pressable>
         ) : null}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
