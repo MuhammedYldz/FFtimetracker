@@ -77,7 +77,9 @@ export default function TimerScreen() {
               router.push('/entry');
             }}
             hitSlop={8}
-            className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+            accessibilityRole="button"
+            accessibilityLabel="Add manual time entry"
+            className="h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
             <MaterialIcons name="add" size={24} color="#142175" />
           </Pressable>
         }

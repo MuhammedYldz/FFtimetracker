@@ -70,7 +70,9 @@ function TaskRow({ task, totalMs }: { task: Task; totalMs: number }) {
           router.navigate('/');
         }}
         hitSlop={8}
-        className="ml-sm h-9 w-9 items-center justify-center rounded-full bg-secondary-container transition-opacity hover:opacity-90 active:opacity-70">
+        accessibilityRole="button"
+        accessibilityLabel={`Start timer for ${task.title}`}
+        className="ml-sm h-11 w-11 items-center justify-center rounded-full bg-secondary-container transition-opacity hover:opacity-90 active:opacity-70">
         <MaterialIcons name="play-arrow" size={22} color="#00504a" />
       </Pressable>
     </Pressable>
@@ -145,7 +147,9 @@ export default function TasksScreen() {
               router.push(addRoute);
             }}
             hitSlop={8}
-            className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+            accessibilityRole="button"
+            accessibilityLabel={segment === 'tasks' ? 'New task' : 'New type'}
+            className="h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
             <MaterialIcons name="add" size={24} color="#142175" />
           </Pressable>
         }

@@ -154,7 +154,9 @@ export default function EntryScreen() {
           <View className="flex-row items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest px-sm py-xs">
             <Pressable
               onPress={() => setDay((d) => addDays(d, -1))}
-              className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+              accessibilityRole="button"
+              accessibilityLabel="Previous day"
+              className="h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
               <MaterialIcons name="chevron-left" size={24} color="#454651" />
             </Pressable>
             <Text className="font-sans-semibold text-body-md text-on-surface">
@@ -162,7 +164,9 @@ export default function EntryScreen() {
             </Text>
             <Pressable
               onPress={() => setDay((d) => addDays(d, 1))}
-              className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+              accessibilityRole="button"
+              accessibilityLabel="Next day"
+              className="h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
               <MaterialIcons name="chevron-right" size={24} color="#454651" />
             </Pressable>
           </View>
