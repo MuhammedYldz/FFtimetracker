@@ -76,6 +76,9 @@ module.exports = {
         'sans-medium': ['Inter_500Medium'],
         'sans-semibold': ['Inter_600SemiBold'],
         'sans-bold': ['Inter_700Bold'],
+        // Distinctive display family for headings and the wordmark.
+        display: ['Sora_600SemiBold'],
+        'display-bold': ['Sora_700Bold'],
         mono: ['JetBrainsMono_500Medium'],
       },
       fontSize: {

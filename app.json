@@ -9,15 +9,15 @@
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#f7f9fb",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#152473",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "package": "com.focusflow.app",
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -29,10 +29,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#142175",
+          "backgroundColor": "#152473",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 120,
           "android": {
             "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "imageWidth": 120
           }
         }
       ],

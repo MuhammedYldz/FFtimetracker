@@ -15,7 +15,7 @@ function CategoryRow({ category }: { category: Category }) {
         tapFeedback();
         router.push({ pathname: '/category', params: { id: category.id } });
       }}
-      className="flex-row items-center justify-between border-b border-outline-variant px-md py-sm active:bg-surface-container-low">
+      className="flex-row items-center justify-between border-b border-outline-variant px-md py-sm transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
       <View className="flex-row items-center gap-sm">
         <View
           className="h-9 w-9 items-center justify-center rounded-full"

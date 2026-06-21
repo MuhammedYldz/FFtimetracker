@@ -16,6 +16,7 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
+import { Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
 import { useStore } from '@/store/useStore';
 import { useAuth } from '@/store/useAuth';
 import { useSyncController } from '@/sync/useSyncController';
@@ -39,6 +40,8 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Sora_600SemiBold,
+    Sora_700Bold,
     JetBrainsMono_500Medium,
   });
 

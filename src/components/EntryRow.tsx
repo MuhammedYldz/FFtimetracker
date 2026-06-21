@@ -15,7 +15,7 @@ export function EntryRow({ entry, onPress }: { entry: TimeEntry; onPress?: () =>
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center justify-between border-b border-outline-variant px-md py-sm active:bg-surface-container-low">
+      className="flex-row items-center justify-between border-b border-outline-variant px-md py-sm transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
       <View className="flex-1 flex-row items-center gap-sm">
         <View className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.color }} />
         <View className="flex-1">
