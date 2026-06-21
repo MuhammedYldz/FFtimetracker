@@ -1,4 +1,16 @@
-export type Source = 'local' | 'jira' | 'azure' | 'custom';
+export type Source = 'local' | 'custom' | 'todoist' | 'github' | 'notion' | 'jira' | 'azure';
+
+/** A user-created work item that time is tracked against. */
+export interface Task {
+  id: string;
+  title: string;
+  note: string | null;
+  categoryId: string | null; // the "type" of work
+  color: string;
+  archived: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
 
 export interface Category {
   id: string;
@@ -17,13 +29,14 @@ export interface Category {
 /** Tombstone for a deleted row, so deletes propagate across devices on sync. */
 export interface Tombstone {
   id: string;
-  type: 'entry' | 'category';
+  type: 'entry' | 'category' | 'task';
   updatedAt: number;
 }
 
 export interface TimeEntry {
   id: string;
   categoryId: string | null;
+  taskId: string | null;
   taskTitle: string;
   note: string | null;
   startedAt: number; // epoch ms
@@ -40,7 +53,7 @@ export type AuthMethod = 'none' | 'api_key' | 'bearer' | 'basic';
 /** A configured integration. Secrets are NOT stored here — they live in secure storage keyed by id. */
 export interface Connection {
   id: string;
-  type: 'custom' | 'jira' | 'azure';
+  type: 'custom' | 'todoist' | 'github' | 'notion' | 'jira' | 'azure';
   name: string;
   baseUrl: string;
   authMethod: AuthMethod;
@@ -49,6 +62,8 @@ export interface Connection {
   resultsPath: string | null; // JSON path to the array, e.g. "data" or "items"; null = root array
   map: { id: string; title: string; status: string | null; assignee: string | null };
   assigneeFilter: string | null; // only keep tasks whose mapped assignee equals this
+  // Provider-specific config for built-in connectors (e.g. Notion databaseId, GitHub filter).
+  extra: Record<string, string> | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -70,6 +85,7 @@ export interface SyncedTask {
 export interface ActiveTimer {
   id: string;
   categoryId: string | null;
+  taskId: string | null;
   taskTitle: string;
   color: string;
   source: Source;

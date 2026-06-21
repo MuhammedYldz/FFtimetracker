@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
 import { useSyncStatus } from '@/store/useSyncStatus';
 import { mergeTable, type Node } from './merge';
-import type { Category, Source, TimeEntry, Tombstone } from '@/db/types';
+import type { Category, Source, Task, TimeEntry, Tombstone } from '@/db/types';
 
 /**
  * Per-row, last-write-wins sync between local storage and Supabase.
@@ -34,6 +34,7 @@ type RemoteEntry = {
   id: string;
   user_id: string;
   category_id: string | null;
+  task_id: string | null;
   task_title: string;
   note: string | null;
   started_at: number;
@@ -45,6 +46,47 @@ type RemoteEntry = {
   updated_at: number;
   deleted: boolean;
 };
+
+type RemoteTask = {
+  id: string;
+  user_id: string;
+  title: string;
+  note: string | null;
+  category_id: string | null;
+  color: string;
+  archived: boolean;
+  created_at: number;
+  updated_at: number;
+  deleted: boolean;
+};
+
+function toRemoteTask(t: Task, userId: string): RemoteTask {
+  return {
+    id: t.id,
+    user_id: userId,
+    title: t.title,
+    note: t.note,
+    category_id: t.categoryId,
+    color: t.color,
+    archived: t.archived,
+    created_at: t.createdAt,
+    updated_at: t.updatedAt,
+    deleted: false,
+  };
+}
+
+function fromRemoteTask(r: RemoteTask): Task {
+  return {
+    id: r.id,
+    title: r.title,
+    note: r.note,
+    categoryId: r.category_id,
+    color: r.color,
+    archived: r.archived,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
 
 function toRemoteCategory(c: Category, userId: string): RemoteCategory {
   return {
@@ -85,6 +127,7 @@ function toRemoteEntry(e: TimeEntry, userId: string): RemoteEntry {
     id: e.id,
     user_id: userId,
     category_id: e.categoryId,
+    task_id: e.taskId,
     task_title: e.taskTitle,
     note: e.note,
     started_at: e.startedAt,
@@ -102,6 +145,7 @@ function fromRemoteEntry(r: RemoteEntry): TimeEntry {
   return {
     id: r.id,
     categoryId: r.category_id,
+    taskId: r.task_id,
     taskTitle: r.task_title,
     note: r.note,
     startedAt: r.started_at,
@@ -140,14 +184,17 @@ export async function syncNow(): Promise<SyncOutcome> {
     const tombstoneById = new Map(store.tombstones.map((t) => [t.id, t]));
 
     // --- Pull remote ---
-    const [catRes, entryRes] = await Promise.all([
+    const [catRes, taskRes, entryRes] = await Promise.all([
       supabase.from('categories').select('*'),
+      supabase.from('tasks').select('*'),
       supabase.from('time_entries').select('*'),
     ]);
     if (catRes.error) return fail(catRes.error.message);
+    if (taskRes.error) return fail(taskRes.error.message);
     if (entryRes.error) return fail(entryRes.error.message);
 
     const remoteCats = (catRes.data as RemoteCategory[]) ?? [];
+    const remoteTasks = (taskRes.data as RemoteTask[]) ?? [];
     const remoteEntries = (entryRes.data as RemoteEntry[]) ?? [];
 
     // --- Build local nodes (live rows + tombstones) ---
@@ -155,6 +202,12 @@ export async function syncNow(): Promise<SyncOutcome> {
       ...store.categories.map((c) => ({ id: c.id, updatedAt: c.updatedAt, deleted: false, row: c })),
       ...store.tombstones
         .filter((t) => t.type === 'category')
+        .map((t) => ({ id: t.id, updatedAt: t.updatedAt, deleted: true })),
+    ];
+    const localTaskNodes: Node<Task>[] = [
+      ...store.tasks.map((t) => ({ id: t.id, updatedAt: t.updatedAt, deleted: false, row: t })),
+      ...store.tombstones
+        .filter((t) => t.type === 'task')
         .map((t) => ({ id: t.id, updatedAt: t.updatedAt, deleted: true })),
     ];
     const localEntryNodes: Node<TimeEntry>[] = [
@@ -170,6 +223,12 @@ export async function syncNow(): Promise<SyncOutcome> {
       deleted: r.deleted,
       row: fromRemoteCategory(r),
     }));
+    const remoteTaskNodes: Node<Task>[] = remoteTasks.map((r) => ({
+      id: r.id,
+      updatedAt: r.updated_at,
+      deleted: r.deleted,
+      row: fromRemoteTask(r),
+    }));
     const remoteEntryNodes: Node<TimeEntry>[] = remoteEntries.map((r) => ({
       id: r.id,
       updatedAt: r.updated_at,
@@ -178,12 +237,18 @@ export async function syncNow(): Promise<SyncOutcome> {
     }));
 
     const catMerge = mergeTable(localCatNodes, remoteCatNodes);
+    const taskMerge = mergeTable(localTaskNodes, remoteTaskNodes);
     const entryMerge = mergeTable(localEntryNodes, remoteEntryNodes);
 
     // --- Push local-newer rows ---
     if (catMerge.toUpsert.length) {
       const rows = catMerge.toUpsert.map((c) => toRemoteCategory(c, userId));
       const { error } = await supabase.from('categories').upsert(rows);
+      if (error) return fail(error.message);
+    }
+    if (taskMerge.toUpsert.length) {
+      const rows = taskMerge.toUpsert.map((t) => toRemoteTask(t, userId));
+      const { error } = await supabase.from('tasks').upsert(rows);
       if (error) return fail(error.message);
     }
     if (entryMerge.toUpsert.length) {
@@ -194,6 +259,9 @@ export async function syncNow(): Promise<SyncOutcome> {
     for (const d of catMerge.toMarkDeleted) {
       await supabase.from('categories').update({ deleted: true, updated_at: d.updatedAt }).eq('id', d.id);
     }
+    for (const d of taskMerge.toMarkDeleted) {
+      await supabase.from('tasks').update({ deleted: true, updated_at: d.updatedAt }).eq('id', d.id);
+    }
     for (const d of entryMerge.toMarkDeleted) {
       await supabase.from('time_entries').update({ deleted: true, updated_at: d.updatedAt }).eq('id', d.id);
     }
@@ -201,6 +269,7 @@ export async function syncNow(): Promise<SyncOutcome> {
     // --- Apply merged result locally ---
     const mergedTombstones: Tombstone[] = [
       ...catMerge.tombstoneIds.map((t) => ({ id: t.id, type: 'category' as const, updatedAt: t.updatedAt })),
+      ...taskMerge.tombstoneIds.map((t) => ({ id: t.id, type: 'task' as const, updatedAt: t.updatedAt })),
       ...entryMerge.tombstoneIds.map((t) => ({ id: t.id, type: 'entry' as const, updatedAt: t.updatedAt })),
     ];
     // Preserve original tombstone metadata where it still applies.
@@ -208,6 +277,7 @@ export async function syncNow(): Promise<SyncOutcome> {
 
     await useStore.getState().replaceData({
       categories: catMerge.liveRows,
+      tasks: taskMerge.liveRows,
       entries: entryMerge.liveRows,
       tombstones: finalTombstones,
     });

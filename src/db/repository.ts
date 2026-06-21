@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ActiveTimer, Category, Connection, SyncedTask, TimeEntry, Tombstone } from './types';
+import type { ActiveTimer, Category, Connection, SyncedTask, Task, TimeEntry, Tombstone } from './types';
 import { DEFAULT_CATEGORIES } from './defaults';
 
 /**
@@ -22,6 +22,7 @@ export function getScope() {
 
 const NAMES = [
   'categories',
+  'tasks',
   'entries',
   'activeTimer',
   'tombstones',
@@ -69,6 +70,16 @@ export async function loadCategories(): Promise<Category[]> {
 
 export async function saveCategories(categories: Category[]): Promise<void> {
   await writeJSON(key('categories'), categories);
+}
+
+// --- Tasks ----------------------------------------------------------------
+
+export async function loadTasks(): Promise<Task[]> {
+  return readJSON<Task[]>(key('tasks'), []);
+}
+
+export async function saveTasks(tasks: Task[]): Promise<void> {
+  await writeJSON(key('tasks'), tasks);
 }
 
 // --- Time entries ---------------------------------------------------------

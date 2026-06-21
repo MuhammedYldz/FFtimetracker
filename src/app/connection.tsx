@@ -98,6 +98,7 @@ export default function ConnectionScreen() {
       assignee: mapAssignee.trim() || null,
     },
     assigneeFilter: assigneeFilter.trim() || null,
+    extra: editing?.extra ?? null,
     createdAt: editing?.createdAt ?? Date.now(),
     updatedAt: Date.now(),
   });

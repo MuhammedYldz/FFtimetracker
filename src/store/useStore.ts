@@ -5,6 +5,7 @@ import type {
   Connection,
   Source,
   SyncedTask,
+  Task,
   TimeEntry,
   Tombstone,
 } from '@/db/types';
@@ -17,6 +18,7 @@ const MIN_ENTRY_MS = 1000;
 
 export interface StartTimerInput {
   categoryId: string | null;
+  taskId?: string | null;
   taskTitle: string;
   color: string;
   source?: Source;
@@ -27,6 +29,7 @@ interface StoreState {
   hydrated: boolean;
   scope: string;
   categories: Category[];
+  tasks: Task[];
   entries: TimeEntry[];
   activeTimer: ActiveTimer | null;
   tombstones: Tombstone[];
@@ -37,6 +40,7 @@ interface StoreState {
   switchScope: (scope: string) => Promise<void>;
   replaceData: (data: {
     categories: Category[];
+    tasks: Task[];
     entries: TimeEntry[];
     tombstones: Tombstone[];
   }) => Promise<void>;
@@ -58,6 +62,14 @@ interface StoreState {
   setCategoryArchived: (id: string, archived: boolean) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
 
+  addTask: (input: { title: string; note: string | null; categoryId: string | null; color: string }) => Promise<Task>;
+  updateTask: (
+    id: string,
+    patch: Partial<Pick<Task, 'title' | 'note' | 'categoryId' | 'color'>>,
+  ) => Promise<void>;
+  setTaskArchived: (id: string, archived: boolean) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+
   addConnection: (conn: Connection) => Promise<void>;
   updateConnection: (id: string, patch: Partial<Connection>) => Promise<void>;
   deleteConnection: (id: string) => Promise<void>;
@@ -66,6 +78,7 @@ interface StoreState {
 
 export interface AddEntryInput {
   categoryId: string | null;
+  taskId?: string | null;
   taskTitle: string;
   color: string;
   source?: Source;
@@ -76,7 +89,7 @@ export interface AddEntryInput {
 }
 
 export type UpdateEntryInput = Partial<
-  Pick<TimeEntry, 'categoryId' | 'taskTitle' | 'color' | 'startedAt' | 'endedAt' | 'durationMs' | 'note'>
+  Pick<TimeEntry, 'categoryId' | 'taskId' | 'taskTitle' | 'color' | 'startedAt' | 'endedAt' | 'durationMs' | 'note'>
 >;
 
 /** Keep entries newest-first by start time. */
@@ -96,6 +109,7 @@ function timerToEntry(t: ActiveTimer, now: number): TimeEntry | null {
   return {
     id: t.id,
     categoryId: t.categoryId,
+    taskId: t.taskId,
     taskTitle: t.taskTitle,
     note: t.note,
     startedAt: t.entryStartedAt,
@@ -112,6 +126,7 @@ export const useStore = create<StoreState>((set, get) => ({
   hydrated: false,
   scope: 'anon',
   categories: [],
+  tasks: [],
   entries: [],
   activeTimer: null,
   tombstones: [],
@@ -120,9 +135,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
   switchScope: async (scope) => {
     repo.setScope(scope);
-    const [categories, entries, activeTimer, tombstones, connections, syncedTasks] =
+    const [categories, tasks, entries, activeTimer, tombstones, connections, syncedTasks] =
       await Promise.all([
         repo.loadCategories(),
+        repo.loadTasks(),
         repo.loadEntries(),
         repo.loadActiveTimer(),
         repo.loadTombstones(),
@@ -132,6 +148,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({
       scope,
       categories,
+      tasks,
       entries,
       activeTimer,
       tombstones,
@@ -141,11 +158,12 @@ export const useStore = create<StoreState>((set, get) => ({
     });
   },
 
-  replaceData: async ({ categories, entries, tombstones }) => {
+  replaceData: async ({ categories, tasks, entries, tombstones }) => {
     const sorted = sortEntries(entries);
-    set({ categories, entries: sorted, tombstones });
+    set({ categories, tasks, entries: sorted, tombstones });
     await Promise.all([
       repo.saveCategories(categories),
+      repo.saveTasks(tasks),
       repo.saveEntries(sorted),
       repo.saveTombstones(tombstones),
     ]);
@@ -167,6 +185,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const timer: ActiveTimer = {
       id: newId(),
       categoryId: input.categoryId,
+      taskId: input.taskId ?? null,
       taskTitle: input.taskTitle,
       color: input.color,
       source: input.source ?? 'local',
@@ -223,6 +242,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const entry: TimeEntry = {
       id: newId(),
       categoryId: input.categoryId,
+      taskId: input.taskId ?? null,
       taskTitle: input.taskTitle,
       note: input.note ?? null,
       startedAt: input.startedAt,
@@ -302,6 +322,46 @@ export const useStore = create<StoreState>((set, get) => ({
     const tombstones = upsertTombstone(get().tombstones, { id, type: 'category', updatedAt: now });
     set({ categories, tombstones });
     await Promise.all([repo.saveCategories(categories), repo.saveTombstones(tombstones)]);
+  },
+
+  addTask: async (input) => {
+    const now = Date.now();
+    const task: Task = {
+      id: newId(),
+      title: input.title,
+      note: input.note,
+      categoryId: input.categoryId,
+      color: input.color,
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const tasks = [task, ...get().tasks];
+    set({ tasks });
+    await repo.saveTasks(tasks);
+    return task;
+  },
+
+  updateTask: async (id, patch) => {
+    const now = Date.now();
+    const tasks = get().tasks.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: now } : t));
+    set({ tasks });
+    await repo.saveTasks(tasks);
+  },
+
+  setTaskArchived: async (id, archived) => {
+    const now = Date.now();
+    const tasks = get().tasks.map((t) => (t.id === id ? { ...t, archived, updatedAt: now } : t));
+    set({ tasks });
+    await repo.saveTasks(tasks);
+  },
+
+  deleteTask: async (id) => {
+    const now = Date.now();
+    const tasks = get().tasks.filter((t) => t.id !== id);
+    const tombstones = upsertTombstone(get().tombstones, { id, type: 'task', updatedAt: now });
+    set({ tasks, tombstones });
+    await Promise.all([repo.saveTasks(tasks), repo.saveTombstones(tombstones)]);
   },
 
   addConnection: async (conn) => {

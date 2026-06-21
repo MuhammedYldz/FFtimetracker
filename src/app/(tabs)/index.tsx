@@ -15,6 +15,7 @@ import type { Category } from '@/db/types';
 export default function TimerScreen() {
   const activeTimer = useStore((s) => s.activeTimer);
   const categories = useStore((s) => s.categories);
+  const tasks = useStore((s) => s.tasks);
   const entries = useStore((s) => s.entries);
   const syncedTasks = useStore((s) => s.syncedTasks);
   const startTimer = useStore((s) => s.startTimer);
@@ -38,6 +39,7 @@ export default function TimerScreen() {
     () => categories.filter((c) => !c.archived).sort((a, b) => a.sortOrder - b.sortOrder),
     [categories],
   );
+  const visibleTasks = useMemo(() => tasks.filter((t) => !t.archived).slice(0, 12), [tasks]);
 
   const start = (input: StartTimerInput) => {
     tapFeedback();
@@ -196,6 +198,42 @@ export default function TimerScreen() {
             })}
           </View>
         </View>
+
+        {/* User tasks */}
+        {visibleTasks.length > 0 ? (
+          <View className="mt-xl w-full">
+            <Text className="mb-sm font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
+              Your tasks
+            </Text>
+            <View className="flex-row flex-wrap gap-xs">
+              {visibleTasks.map((task) => {
+                const isCurrent = activeTimer?.taskId === task.id;
+                return (
+                  <Pressable
+                    key={task.id}
+                    onPress={() =>
+                      start({
+                        taskId: task.id,
+                        categoryId: task.categoryId,
+                        taskTitle: task.title,
+                        color: task.color,
+                      })
+                    }
+                    className={`max-w-full flex-row items-center gap-xs rounded-full border px-sm py-xs transition-colors hover:bg-surface-container-low active:opacity-70 ${
+                      isCurrent ? 'border-primary bg-primary-fixed' : 'border-outline-variant bg-surface-container-lowest'
+                    }`}>
+                    <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: task.color }} />
+                    <Text
+                      className={`font-sans-medium text-body-sm ${isCurrent ? 'text-on-primary-fixed' : 'text-on-surface'}`}
+                      numberOfLines={1}>
+                      {task.title}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
 
         {/* Synced tasks */}
         {syncedTasks.length > 0 ? (

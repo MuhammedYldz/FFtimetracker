@@ -39,9 +39,12 @@ export function groupByCategory(entries: TimeEntry[], categories: Category[]): C
 
 const SOURCE_META: Record<Source, { label: string; color: string }> = {
   local: { label: 'Manual', color: '#006a61' },
+  todoist: { label: 'Todoist', color: '#e44332' },
+  github: { label: 'GitHub', color: '#24292e' },
+  notion: { label: 'Notion', color: '#000000' },
+  custom: { label: 'Custom', color: '#e65100' },
   jira: { label: 'Jira', color: '#142175' },
   azure: { label: 'Azure', color: '#0e009d' },
-  custom: { label: 'Custom', color: '#e65100' },
 };
 
 export interface SourceBucket {
