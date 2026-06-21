@@ -251,40 +251,66 @@ export default function ConnectScreen() {
           </View>
         </View>
 
-        {/* Integrations */}
+        {/* Integrations — require an account so connections are saved to it */}
         <View className="gap-sm">
           <Text className="font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
             Integrations
           </Text>
 
-          {(['todoist', 'github', 'notion'] as const).map((type) => {
-            const conns = connByType(type);
-            if (conns.length > 0) {
-              return conns.map((c) => <ConnectionRow key={c.id} conn={c} />);
-            }
-            return (
+          {!user ? (
+            <Pressable
+              onPress={() => {
+                tapFeedback();
+                router.push('/auth');
+              }}
+              className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md transition-colors hover:bg-surface-container-low active:opacity-80">
+              <View className="flex-row items-center gap-sm">
+                <View className="h-11 w-11 items-center justify-center rounded-full bg-primary-fixed">
+                  <MaterialIcons name="lock" size={22} color="#152473" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-sans-semibold text-body-md text-on-surface">
+                    Sign in to connect your tools
+                  </Text>
+                  <Text className="font-sans text-body-sm text-on-surface-variant">
+                    Todoist, GitHub, Notion and more — saved to your account.
+                  </Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color="#767682" />
+              </View>
+            </Pressable>
+          ) : (
+            <>
+              {(['todoist', 'github', 'notion'] as const).map((type) => {
+                const conns = connByType(type);
+                if (conns.length > 0) {
+                  return conns.map((c) => <ConnectionRow key={c.id} conn={c} />);
+                }
+                return (
+                  <ConnectCard
+                    key={type}
+                    type={type}
+                    onConnect={() => {
+                      tapFeedback();
+                      router.push({ pathname: '/provider', params: { type } });
+                    }}
+                  />
+                );
+              })}
+
+              {/* Custom API */}
+              {connByType('custom').map((c) => (
+                <ConnectionRow key={c.id} conn={c} />
+              ))}
               <ConnectCard
-                key={type}
-                type={type}
+                type="custom"
                 onConnect={() => {
                   tapFeedback();
-                  router.push({ pathname: '/provider', params: { type } });
+                  router.push('/connection');
                 }}
               />
-            );
-          })}
-
-          {/* Custom API */}
-          {connByType('custom').map((c) => (
-            <ConnectionRow key={c.id} conn={c} />
-          ))}
-          <ConnectCard
-            type="custom"
-            onConnect={() => {
-              tapFeedback();
-              router.push('/connection');
-            }}
-          />
+            </>
+          )}
         </View>
       </ScrollView>
     </Screen>

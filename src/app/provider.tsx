@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { useAuth, isSupabaseConfigured } from '@/store/useAuth';
+import { SignInRequired } from '@/components/SignInRequired';
 import { PROVIDERS, fetchTasksForConnection, type ProviderType } from '@/integrations/providers';
 import { setSecret, deleteSecret } from '@/lib/secureStore';
 import { newId } from '@/lib/id';
@@ -17,6 +19,7 @@ export default function ProviderScreen() {
   const type = (params.type as ProviderType) ?? 'todoist';
   const meta = PROVIDERS[type] ?? PROVIDERS.todoist;
 
+  const user = useAuth((s) => s.user);
   const connections = useStore((s) => s.connections);
   const addConnection = useStore((s) => s.addConnection);
   const updateConnection = useStore((s) => s.updateConnection);
@@ -97,6 +100,8 @@ export default function ProviderScreen() {
         { text: 'Disconnect', style: 'destructive', onPress: doDelete },
       ]);
   };
+
+  if (isSupabaseConfigured && !user) return <SignInRequired />;
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-surface">

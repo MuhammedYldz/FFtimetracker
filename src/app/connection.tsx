@@ -3,6 +3,8 @@ import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Platfo
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { useAuth, isSupabaseConfigured } from '@/store/useAuth';
+import { SignInRequired } from '@/components/SignInRequired';
 import { newId } from '@/lib/id';
 import { setSecret, deleteSecret } from '@/lib/secureStore';
 import { fetchCustomTasks } from '@/integrations/customApi';
@@ -52,6 +54,7 @@ function Field({
 
 export default function ConnectionScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
+  const user = useAuth((s) => s.user);
   const connections = useStore((s) => s.connections);
   const addConnection = useStore((s) => s.addConnection);
   const updateConnection = useStore((s) => s.updateConnection);
@@ -163,6 +166,8 @@ export default function ConnectionScreen() {
         { text: 'Remove', style: 'destructive', onPress: doDelete },
       ]);
   };
+
+  if (isSupabaseConfigured && !user) return <SignInRequired />;
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-surface">
