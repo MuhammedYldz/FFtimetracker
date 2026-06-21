@@ -53,7 +53,7 @@ export default function TasksScreen() {
   return (
     <Screen>
       <AppHeader
-        title="Tasks"
+        title="Categories"
         right={
           <Pressable
             onPress={() => {

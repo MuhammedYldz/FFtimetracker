@@ -60,7 +60,8 @@ export default function TimerScreen() {
   };
 
   const ringColor = activeTimer?.color ?? '#006a61';
-  const ringGradient: [string, string] = isActive ? [ringColor, ringColor] : ['#152473', '#00a896'];
+  // Brighter than the brand base so the ring reads clearly on light AND dark.
+  const ringGradient: [string, string] = isActive ? [ringColor, ringColor] : ['#4b57aa', '#06b6a4'];
   const canStartCustom = !!customTitle.trim();
   const heroShadow = Platform.OS === 'web' ? { boxShadow: '0 18px 40px rgba(21,36,115,0.16)' } : {};
 
@@ -88,9 +89,9 @@ export default function TimerScreen() {
             colors={ringGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 9999 }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', borderRadius: 9999 }}
           />
-          <View className="h-[236px] w-[236px] items-center justify-center rounded-full bg-surface-container-lowest">
+          <View className="h-[214px] w-[214px] items-center justify-center rounded-full bg-surface-container-high">
             <Text className="font-mono text-[44px] leading-[52px] text-on-surface">
               {formatHMS(elapsedMs)}
             </Text>
@@ -186,7 +187,10 @@ export default function TimerScreen() {
                     isCurrent ? 'border-primary bg-primary-fixed' : 'border-outline-variant bg-surface-container-lowest'
                   }`}>
                   <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                  <Text className="font-sans-medium text-body-sm text-on-surface">{cat.name}</Text>
+                  <Text
+                    className={`font-sans-medium text-body-sm ${isCurrent ? 'text-on-primary-fixed' : 'text-on-surface'}`}>
+                    {cat.name}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -217,7 +221,9 @@ export default function TimerScreen() {
                       isCurrent ? 'border-primary bg-primary-fixed' : 'border-outline-variant bg-surface-container-lowest'
                     }`}>
                     <MaterialIcons name="sync" size={14} color={task.color} />
-                    <Text className="font-sans-medium text-body-sm text-on-surface" numberOfLines={1}>
+                    <Text
+                      className={`font-sans-medium text-body-sm ${isCurrent ? 'text-on-primary-fixed' : 'text-on-surface'}`}
+                      numberOfLines={1}>
                       {task.title}
                     </Text>
                   </Pressable>

@@ -1,4 +1,5 @@
-import { useColorScheme, useWindowDimensions, type ColorValue } from 'react-native';
+import { useWindowDimensions, type ColorValue } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getColors } from '@/theme/colors';
@@ -6,8 +7,8 @@ import { getColors } from '@/theme/colors';
 type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 export default function TabsLayout() {
-  const scheme = useColorScheme();
-  const c = getColors(scheme);
+  const { colorScheme } = useColorScheme();
+  const c = getColors(colorScheme);
   const { width } = useWindowDimensions();
   const isWide = width >= 900; // desktop -> left sidebar
 
@@ -42,7 +43,7 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: c.background },
       }}>
       <Tabs.Screen name="index" options={{ title: 'Timer', tabBarIcon: icon('timer') }} />
-      <Tabs.Screen name="tasks" options={{ title: 'Tasks', tabBarIcon: icon('assignment') }} />
+      <Tabs.Screen name="tasks" options={{ title: 'Categories', tabBarIcon: icon('category') }} />
       <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: icon('calendar-month') }} />
       <Tabs.Screen name="stats" options={{ title: 'Stats', tabBarIcon: icon('dashboard') }} />
       <Tabs.Screen name="connect" options={{ title: 'Connect', tabBarIcon: icon('hub') }} />

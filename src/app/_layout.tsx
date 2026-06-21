@@ -1,12 +1,11 @@
 import '../global.css';
 
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { colorScheme as nwColorScheme } from 'nativewind';
+import { useColorScheme } from 'nativewind';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
@@ -18,18 +17,21 @@ import {
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
 import { useAuth } from '@/store/useAuth';
+import { useTheme } from '@/store/useTheme';
 import { useSyncController } from '@/sync/useSyncController';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
-  const system = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const initAuth = useAuth((s) => s.init);
+  const initTheme = useTheme((s) => s.init);
   const recovery = useAuth((s) => s.recovery);
 
   useEffect(() => {
     initAuth();
-  }, [initAuth]);
+    initTheme();
+  }, [initAuth, initTheme]);
 
   // A password-recovery link was opened — send the user to set a new password.
   useEffect(() => {
@@ -48,11 +50,6 @@ export default function RootLayout() {
     JetBrainsMono_500Medium,
   });
 
-  // Keep NativeWind's class-based dark mode in sync with the OS appearance.
-  useEffect(() => {
-    nwColorScheme.set('system');
-  }, []);
-
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync().catch(() => {});
@@ -64,7 +61,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style={system === 'dark' ? 'light' : 'dark'} />
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="entry" options={{ presentation: 'modal' }} />

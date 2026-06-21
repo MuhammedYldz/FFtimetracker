@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { useAuth, isSupabaseConfigured } from '@/store/useAuth';
 import { useStore } from '@/store/useStore';
 import { useSyncStatus } from '@/store/useSyncStatus';
+import { useTheme, type ThemePref } from '@/store/useTheme';
 import { syncNow } from '@/sync/sync';
 import { fetchCustomTasks } from '@/integrations/customApi';
 import { formatClock } from '@/lib/time';
@@ -92,11 +93,19 @@ function IntegrationCard({
   );
 }
 
+const THEME_OPTIONS: { value: ThemePref; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
+  { value: 'system', label: 'System', icon: 'brightness-auto' },
+  { value: 'light', label: 'Light', icon: 'light-mode' },
+  { value: 'dark', label: 'Dark', icon: 'dark-mode' },
+];
+
 export default function ConnectScreen() {
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const { phase, lastSyncedAt, error } = useSyncStatus();
   const customConnections = useStore((s) => s.connections.filter((c) => c.type === 'custom'));
+  const themePref = useTheme((s) => s.pref);
+  const setThemePref = useTheme((s) => s.setPref);
 
   return (
     <Screen>
@@ -191,6 +200,39 @@ export default function ConnectScreen() {
               </View>
             </Pressable>
           )}
+        </View>
+
+        {/* Appearance */}
+        <View className="gap-sm">
+          <Text className="font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
+            Appearance
+          </Text>
+          <View className="flex-row gap-sm rounded-xl border border-outline-variant bg-surface-container-lowest p-xs">
+            {THEME_OPTIONS.map((opt) => {
+              const active = themePref === opt.value;
+              return (
+                <Pressable
+                  key={opt.value}
+                  onPress={() => {
+                    tapFeedback();
+                    setThemePref(opt.value);
+                  }}
+                  className={`flex-1 flex-row items-center justify-center gap-xs rounded-lg py-sm transition-colors ${
+                    active ? 'bg-primary-fixed' : 'hover:bg-surface-container-low'
+                  }`}>
+                  <MaterialIcons
+                    name={opt.icon}
+                    size={18}
+                    color={active ? '#152473' : '#767682'}
+                  />
+                  <Text
+                    className={`font-sans-medium text-body-sm ${active ? 'text-on-primary-fixed' : 'text-on-surface-variant'}`}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         {/* Integrations */}

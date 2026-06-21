@@ -25,6 +25,7 @@ const SEMANTIC_COLORS = [
   'on-primary-container',
   'primary-fixed',
   'primary-fixed-dim',
+  'on-primary-fixed',
   'secondary',
   'on-secondary',
   'secondary-container',

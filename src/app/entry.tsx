@@ -254,7 +254,10 @@ export default function EntryScreen() {
                     sel ? 'border-primary bg-primary-fixed' : 'border-outline-variant bg-surface-container-lowest'
                   }`}>
                   <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                  <Text className="font-sans-medium text-body-sm text-on-surface">{cat.name}</Text>
+                  <Text
+                    className={`font-sans-medium text-body-sm ${sel ? 'text-on-primary-fixed' : 'text-on-surface'}`}>
+                    {cat.name}
+                  </Text>
                 </Pressable>
               );
             })}

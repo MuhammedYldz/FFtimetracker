@@ -24,6 +24,7 @@
   --color-on-primary-container: 158 169 255;
   --color-primary-fixed: 223 224 255;
   --color-primary-fixed-dim: 188 195 255;
+  --color-on-primary-fixed: 0 13 96;
   --color-secondary: 0 106 97;
   --color-on-secondary: 255 255 255;
   --color-secondary-container: 134 242 228;
@@ -66,6 +67,7 @@
   --color-on-primary-container: 223 224 255;
   --color-primary-fixed: 223 224 255;
   --color-primary-fixed-dim: 188 195 255;
+  --color-on-primary-fixed: 0 13 96;
   --color-secondary: 107 216 203;
   --color-on-secondary: 0 56 47;
   --color-secondary-container: 0 80 73;

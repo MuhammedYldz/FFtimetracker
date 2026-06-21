@@ -119,9 +119,11 @@ export default function CalendarScreen() {
                     className={`font-sans-medium text-body-sm ${
                       isSelected
                         ? 'text-on-primary'
-                        : inMonth
-                          ? 'text-on-surface'
-                          : 'text-outline'
+                        : isToday
+                          ? 'text-on-primary-fixed'
+                          : inMonth
+                            ? 'text-on-surface'
+                            : 'text-outline'
                     }`}>
                     {date.getDate()}
                   </Text>
