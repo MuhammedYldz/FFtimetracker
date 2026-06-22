@@ -42,6 +42,7 @@ interface StoreState {
     categories: Category[];
     tasks: Task[];
     entries: TimeEntry[];
+    connections: Connection[];
     tombstones: Tombstone[];
   }) => Promise<void>;
   startTimer: (input: StartTimerInput) => Promise<void>;
@@ -158,13 +159,14 @@ export const useStore = create<StoreState>((set, get) => ({
     });
   },
 
-  replaceData: async ({ categories, tasks, entries, tombstones }) => {
+  replaceData: async ({ categories, tasks, entries, connections, tombstones }) => {
     const sorted = sortEntries(entries);
-    set({ categories, tasks, entries: sorted, tombstones });
+    set({ categories, tasks, entries: sorted, connections, tombstones });
     await Promise.all([
       repo.saveCategories(categories),
       repo.saveTasks(tasks),
       repo.saveEntries(sorted),
+      repo.saveConnections(connections),
       repo.saveTombstones(tombstones),
     ]);
   },
@@ -380,10 +382,16 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   deleteConnection: async (id) => {
+    const now = Date.now();
     const connections = get().connections.filter((c) => c.id !== id);
     const syncedTasks = get().syncedTasks.filter((t) => t.connectionId !== id);
-    set({ connections, syncedTasks });
-    await Promise.all([repo.saveConnections(connections), repo.saveSyncedTasks(syncedTasks)]);
+    const tombstones = upsertTombstone(get().tombstones, { id, type: 'connection', updatedAt: now });
+    set({ connections, syncedTasks, tombstones });
+    await Promise.all([
+      repo.saveConnections(connections),
+      repo.saveSyncedTasks(syncedTasks),
+      repo.saveTombstones(tombstones),
+    ]);
   },
 
   setSyncedTasksForConnection: async (connectionId, tasks) => {

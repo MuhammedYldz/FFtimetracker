@@ -35,6 +35,8 @@ export function useSyncController() {
       if (
         state.entries === prev.entries &&
         state.categories === prev.categories &&
+        state.tasks === prev.tasks &&
+        state.connections === prev.connections &&
         state.tombstones === prev.tombstones
       ) {
         return;

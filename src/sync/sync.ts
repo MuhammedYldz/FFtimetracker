@@ -2,7 +2,9 @@ import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
 import { useSyncStatus } from '@/store/useSyncStatus';
 import { mergeTable, type Node } from './merge';
-import type { Category, Source, Task, TimeEntry, Tombstone } from '@/db/types';
+import { getSecret, setSecret } from '@/lib/secureStore';
+import { fetchTasksForConnection } from '@/integrations/providers';
+import type { AuthMethod, Category, Connection, Source, Task, TimeEntry, Tombstone } from '@/db/types';
 
 /**
  * Per-row, last-write-wins sync between local storage and Supabase.
@@ -83,6 +85,65 @@ function fromRemoteTask(r: RemoteTask): Task {
     categoryId: r.category_id,
     color: r.color,
     archived: r.archived,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+type RemoteConnection = {
+  id: string;
+  user_id: string;
+  type: string;
+  name: string;
+  base_url: string;
+  auth_method: string;
+  api_key_header: string | null;
+  tasks_path: string;
+  results_path: string | null;
+  map: Connection['map'];
+  assignee_filter: string | null;
+  extra: Record<string, string> | null;
+  token: string | null;
+  created_at: number;
+  updated_at: number;
+  deleted: boolean;
+};
+
+/** Map a connection to its remote row, including its secret token. */
+async function toRemoteConnection(c: Connection, userId: string): Promise<RemoteConnection> {
+  return {
+    id: c.id,
+    user_id: userId,
+    type: c.type,
+    name: c.name,
+    base_url: c.baseUrl,
+    auth_method: c.authMethod,
+    api_key_header: c.apiKeyHeader,
+    tasks_path: c.tasksPath,
+    results_path: c.resultsPath,
+    map: c.map,
+    assignee_filter: c.assigneeFilter,
+    extra: c.extra,
+    token: (await getSecret(c.id)) ?? null,
+    created_at: c.createdAt,
+    updated_at: c.updatedAt,
+    deleted: false,
+  };
+}
+
+function fromRemoteConnection(r: RemoteConnection): Connection {
+  return {
+    id: r.id,
+    type: r.type as Connection['type'],
+    name: r.name,
+    baseUrl: r.base_url,
+    authMethod: r.auth_method as AuthMethod,
+    apiKeyHeader: r.api_key_header,
+    tasksPath: r.tasks_path,
+    resultsPath: r.results_path,
+    map: r.map,
+    assigneeFilter: r.assignee_filter,
+    extra: r.extra,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -184,18 +245,22 @@ export async function syncNow(): Promise<SyncOutcome> {
     const tombstoneById = new Map(store.tombstones.map((t) => [t.id, t]));
 
     // --- Pull remote ---
-    const [catRes, taskRes, entryRes] = await Promise.all([
+    const [catRes, taskRes, entryRes, connRes] = await Promise.all([
       supabase.from('categories').select('*'),
       supabase.from('tasks').select('*'),
       supabase.from('time_entries').select('*'),
+      supabase.from('connections').select('*'),
     ]);
     if (catRes.error) return fail(catRes.error.message);
     if (taskRes.error) return fail(taskRes.error.message);
     if (entryRes.error) return fail(entryRes.error.message);
+    if (connRes.error) return fail(connRes.error.message);
 
     const remoteCats = (catRes.data as RemoteCategory[]) ?? [];
     const remoteTasks = (taskRes.data as RemoteTask[]) ?? [];
     const remoteEntries = (entryRes.data as RemoteEntry[]) ?? [];
+    const remoteConns = (connRes.data as RemoteConnection[]) ?? [];
+    const remoteTokenById = new Map(remoteConns.map((r) => [r.id, r.token]));
 
     // --- Build local nodes (live rows + tombstones) ---
     const localCatNodes: Node<Category>[] = [
@@ -214,6 +279,12 @@ export async function syncNow(): Promise<SyncOutcome> {
       ...store.entries.map((e) => ({ id: e.id, updatedAt: e.updatedAt, deleted: false, row: e })),
       ...store.tombstones
         .filter((t) => t.type === 'entry')
+        .map((t) => ({ id: t.id, updatedAt: t.updatedAt, deleted: true })),
+    ];
+    const localConnNodes: Node<Connection>[] = [
+      ...store.connections.map((c) => ({ id: c.id, updatedAt: c.updatedAt, deleted: false, row: c })),
+      ...store.tombstones
+        .filter((t) => t.type === 'connection')
         .map((t) => ({ id: t.id, updatedAt: t.updatedAt, deleted: true })),
     ];
 
@@ -235,10 +306,17 @@ export async function syncNow(): Promise<SyncOutcome> {
       deleted: r.deleted,
       row: fromRemoteEntry(r),
     }));
+    const remoteConnNodes: Node<Connection>[] = remoteConns.map((r) => ({
+      id: r.id,
+      updatedAt: r.updated_at,
+      deleted: r.deleted,
+      row: fromRemoteConnection(r),
+    }));
 
     const catMerge = mergeTable(localCatNodes, remoteCatNodes);
     const taskMerge = mergeTable(localTaskNodes, remoteTaskNodes);
     const entryMerge = mergeTable(localEntryNodes, remoteEntryNodes);
+    const connMerge = mergeTable(localConnNodes, remoteConnNodes);
 
     // --- Push local-newer rows ---
     if (catMerge.toUpsert.length) {
@@ -265,24 +343,52 @@ export async function syncNow(): Promise<SyncOutcome> {
     for (const d of entryMerge.toMarkDeleted) {
       await supabase.from('time_entries').update({ deleted: true, updated_at: d.updatedAt }).eq('id', d.id);
     }
+    if (connMerge.toUpsert.length) {
+      const rows = await Promise.all(connMerge.toUpsert.map((c) => toRemoteConnection(c, userId)));
+      const { error } = await supabase.from('connections').upsert(rows);
+      if (error) return fail(error.message);
+    }
+    for (const d of connMerge.toMarkDeleted) {
+      await supabase.from('connections').update({ deleted: true, updated_at: d.updatedAt }).eq('id', d.id);
+    }
 
     // --- Apply merged result locally ---
     const mergedTombstones: Tombstone[] = [
       ...catMerge.tombstoneIds.map((t) => ({ id: t.id, type: 'category' as const, updatedAt: t.updatedAt })),
       ...taskMerge.tombstoneIds.map((t) => ({ id: t.id, type: 'task' as const, updatedAt: t.updatedAt })),
       ...entryMerge.tombstoneIds.map((t) => ({ id: t.id, type: 'entry' as const, updatedAt: t.updatedAt })),
+      ...connMerge.tombstoneIds.map((t) => ({ id: t.id, type: 'connection' as const, updatedAt: t.updatedAt })),
     ];
     // Preserve original tombstone metadata where it still applies.
     const finalTombstones = mergedTombstones.map((t) => tombstoneById.get(t.id) ?? t);
+
+    // Bring tokens for synced connections into this device's secure storage.
+    for (const conn of connMerge.liveRows) {
+      const localToken = await getSecret(conn.id);
+      const remoteToken = remoteTokenById.get(conn.id);
+      if (!localToken && remoteToken) await setSecret(conn.id, remoteToken);
+    }
 
     await useStore.getState().replaceData({
       categories: catMerge.liveRows,
       tasks: taskMerge.liveRows,
       entries: entryMerge.liveRows,
+      connections: connMerge.liveRows,
       tombstones: finalTombstones,
     });
 
     status.set({ phase: 'ok', lastSyncedAt: Date.now(), error: null });
+
+    // Best-effort: fetch tasks for connections that arrived without a local
+    // cache (e.g. synced from another device). Errors are ignored.
+    const syncedNow = useStore.getState().syncedTasks;
+    for (const conn of connMerge.liveRows) {
+      if (syncedNow.some((t) => t.connectionId === conn.id)) continue;
+      const result = await fetchTasksForConnection(conn);
+      if (result.ok && result.tasks.length) {
+        await useStore.getState().setSyncedTasksForConnection(conn.id, result.tasks);
+      }
+    }
     return { ok: true };
   } catch (e) {
     return fail(e instanceof Error ? e.message : 'Sync failed');

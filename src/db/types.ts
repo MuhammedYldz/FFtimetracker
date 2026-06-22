@@ -29,7 +29,7 @@ export interface Category {
 /** Tombstone for a deleted row, so deletes propagate across devices on sync. */
 export interface Tombstone {
   id: string;
-  type: 'entry' | 'category' | 'task';
+  type: 'entry' | 'category' | 'task' | 'connection';
   updatedAt: number;
 }
 
