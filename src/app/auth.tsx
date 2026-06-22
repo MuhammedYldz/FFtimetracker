@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@/store/useAuth';
+import { KeyboardAwareScroll } from '@/components/KeyboardAwareScroll';
 import { successFeedback } from '@/lib/haptics';
 
 type Mode = 'signin' | 'signup';
@@ -81,7 +82,7 @@ export default function AuthScreen() {
         <View className="w-12" />
       </View>
 
-      <View className="gap-lg p-lg">
+      <KeyboardAwareScroll contentContainerClassName="gap-lg p-lg">
         <View className="items-center gap-xs py-sm">
           <View className="h-16 w-16 items-center justify-center rounded-full bg-primary-fixed">
             <MaterialIcons name="cloud-sync" size={30} color="#142175" />
@@ -159,7 +160,7 @@ export default function AuthScreen() {
             <Text className="font-sans text-body-sm text-on-surface-variant">Forgot password?</Text>
           </Pressable>
         ) : null}
-      </View>
+      </KeyboardAwareScroll>
       </View>
     </SafeAreaView>
   );

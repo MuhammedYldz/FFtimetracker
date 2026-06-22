@@ -56,7 +56,7 @@ function ConnectionRow({ conn }: { conn: Connection }) {
           <MaterialIcons name={meta.icon} size={24} color="#ffffff" />
         </View>
         <View className="flex-1">
-          <Text className="font-sans-semibold text-body-md text-on-surface">{conn.name}</Text>
+          <Text className="font-sans-semibold text-body-md text-on-surface" numberOfLines={1}>{conn.name}</Text>
           <Text className={`font-sans text-body-sm ${error ? 'text-error' : 'text-on-surface-variant'}`} numberOfLines={1}>
             {error ? error : `${taskCount} task${taskCount === 1 ? '' : 's'} synced`}
           </Text>

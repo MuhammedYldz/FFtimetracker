@@ -3,6 +3,7 @@ import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Platfo
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { KeyboardAwareScroll } from '@/components/KeyboardAwareScroll';
 import { useAuth, isSupabaseConfigured } from '@/store/useAuth';
 import { SignInRequired } from '@/components/SignInRequired';
 import { newId } from '@/lib/id';
@@ -184,7 +185,7 @@ export default function ConnectionScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerClassName="p-lg gap-md" keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScroll contentContainerClassName="p-lg gap-md">
         <Field label="Name" value={name} onChangeText={setName} placeholder="My company API" autoCapitalize="sentences" />
         <Field label="Base URL" value={baseUrl} onChangeText={setBaseUrl} placeholder="https://api.example.com" />
         <Field label="Fetch tasks path" value={tasksPath} onChangeText={setTasksPath} placeholder="/tasks" />
@@ -265,7 +266,7 @@ export default function ConnectionScreen() {
             <Text className="font-sans-medium text-body-md text-error">Remove connection</Text>
           </Pressable>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScroll>
       </View>
     </SafeAreaView>
   );

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { KeyboardAwareScroll } from '@/components/KeyboardAwareScroll';
 import {
   addDays,
   clockToEpoch,
@@ -150,7 +151,7 @@ export default function EntryScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerClassName="p-lg gap-lg" keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScroll contentContainerClassName="p-lg gap-lg">
         {/* Date */}
         <View className="gap-xs">
           <Text className="font-sans-semibold text-label-md uppercase tracking-wider text-on-surface-variant">
@@ -333,7 +334,7 @@ export default function EntryScreen() {
             <Text className="font-sans-medium text-body-md text-error">Delete entry</Text>
           </Pressable>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScroll>
       </View>
     </SafeAreaView>
   );

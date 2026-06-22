@@ -88,12 +88,12 @@ function CategoryRow({ category }: { category: Category }) {
         router.push({ pathname: '/category', params: { id: category.id } });
       }}
       className="flex-row items-center justify-between border-b border-outline-variant px-md py-sm transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
-      <View className="flex-row items-center gap-sm">
+      <View className="flex-1 flex-row items-center gap-sm">
         <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: category.color }}>
           <MaterialIcons name={category.icon as keyof typeof MaterialIcons.glyphMap} size={20} color="#ffffff" />
         </View>
-        <View>
-          <Text className="font-sans-medium text-body-md text-on-surface">{category.name}</Text>
+        <View className="flex-1">
+          <Text className="font-sans-medium text-body-md text-on-surface" numberOfLines={1}>{category.name}</Text>
           {category.isDefault ? (
             <Text className="font-sans text-label-md text-on-surface-variant">Built-in</Text>
           ) : null}

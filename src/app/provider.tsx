@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { KeyboardAwareScroll } from '@/components/KeyboardAwareScroll';
 import { useAuth, isSupabaseConfigured } from '@/store/useAuth';
 import { SignInRequired } from '@/components/SignInRequired';
 import { PROVIDERS, fetchTasksForConnection, type ProviderType } from '@/integrations/providers';
@@ -70,18 +71,23 @@ export default function ProviderScreen() {
       updatedAt: Date.now(),
     };
 
+    // Validate the token by fetching FIRST. The token must be in secure
+    // storage for the fetch; if validation fails we roll it back so nothing
+    // is half-saved (and retrying can't create a duplicate connection).
     if (token.trim()) await setSecret(connId, token.trim());
-    if (editing) await updateConnection(connId, conn);
-    else await addConnection(conn);
-
-    // Try an initial fetch so the user gets immediate feedback.
     const result = await fetchTasksForConnection(conn);
-    setBusy(false);
     if (!result.ok) {
-      setError(result.error ?? 'Could not reach the service. Check your token.');
+      if (token.trim() && !editing) await deleteSecret(connId);
+      setBusy(false);
+      setError(result.error ?? 'Could not reach the service. Check your token and try again.');
       return;
     }
+
+    // Validated — now persist the connection and its tasks.
+    if (editing) await updateConnection(connId, conn);
+    else await addConnection(conn);
     await setSyncedTasks(connId, result.tasks);
+    setBusy(false);
     successFeedback();
     router.back();
   };
@@ -122,7 +128,7 @@ export default function ProviderScreen() {
           </Pressable>
         </View>
 
-        <ScrollView contentContainerClassName="p-lg gap-lg" keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScroll contentContainerClassName="p-lg gap-lg">
           <View className="flex-row items-center gap-sm">
             <View className="h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: meta.color }}>
               <MaterialIcons name={meta.icon as keyof typeof MaterialIcons.glyphMap} size={26} color="#ffffff" />
@@ -206,7 +212,7 @@ export default function ProviderScreen() {
               <Text className="font-sans-medium text-body-md text-error">Disconnect</Text>
             </Pressable>
           ) : null}
-        </ScrollView>
+        </KeyboardAwareScroll>
       </View>
     </SafeAreaView>
   );

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { KeyboardAwareScroll } from '@/components/KeyboardAwareScroll';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categoryStyle';
 import { successFeedback, tapFeedback } from '@/lib/haptics';
 
@@ -87,7 +88,7 @@ export default function CategoryScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerClassName="p-lg gap-lg" keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScroll contentContainerClassName="p-lg gap-lg">
         {/* Preview */}
         <View className="items-center gap-sm py-sm">
           <View
@@ -188,7 +189,7 @@ export default function CategoryScreen() {
             </Pressable>
           </View>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScroll>
       </View>
     </SafeAreaView>
   );

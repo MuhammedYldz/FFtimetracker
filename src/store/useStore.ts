@@ -365,7 +365,8 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addConnection: async (conn) => {
-    const connections = [...get().connections, conn];
+    // Idempotent by id — never create a duplicate of the same connection.
+    const connections = [...get().connections.filter((c) => c.id !== conn.id), conn];
     set({ connections });
     await repo.saveConnections(connections);
   },
