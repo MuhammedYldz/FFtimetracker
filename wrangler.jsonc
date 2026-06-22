@@ -1,0 +1,11 @@
+{
+  // Cloudflare Workers static-assets config for the FocusFlow web app.
+  // SPA fallback: any unknown path serves index.html (200) so Expo Router
+  // handles client-side routes — without the _redirects infinite-loop issue.
+  "name": "focusflowtimetracker",
+  "compatibility_date": "2025-01-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
