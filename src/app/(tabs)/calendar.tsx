@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Screen } from '@/components/Screen';
@@ -20,9 +20,21 @@ import {
 
 const WEEKDAY_HEADERS = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
 
+/** Compact per-cell duration, e.g. 135 min -> "2h15", 45 min -> "45m". */
+function compactDur(ms: number): string {
+  const m = Math.round(ms / 60000);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return r ? `${h}h${r}` : `${h}h`;
+}
+
 export default function CalendarScreen() {
   const entries = useStore((s) => s.entries);
   const now = Date.now();
+
+  const { width } = useWindowDimensions();
+  const isWide = Platform.OS === 'web' && width >= 1024;
 
   const [monthEpoch, setMonthEpoch] = useState(() => startOfMonth(now));
   const [selectedDay, setSelectedDay] = useState(() => startOfDay(now));
@@ -52,147 +64,161 @@ export default function CalendarScreen() {
   );
   const selectedTotalMs = sumDuration(selectedEntries);
 
-  return (
-    <Screen>
-      <AppHeader title="Calendar" />
-      <ScrollView contentContainerClassName="p-md gap-md">
-        {/* Month header */}
-        <View className="flex-row items-center justify-between">
-          <Text className="font-sans-semibold text-headline-md text-on-surface">
-            {formatMonthYear(monthEpoch)}
+  /* ---- Blocks ---- */
+
+  const monthHeader = (
+    <View className="gap-xs">
+      <View className="flex-row items-center justify-between">
+        <Text className="font-sans-semibold text-headline-md text-on-surface">{formatMonthYear(monthEpoch)}</Text>
+        <View className="flex-row items-center gap-xs">
+          <Pressable
+            onPress={() => setMonthEpoch((m) => addMonths(m, -1))}
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
+            className="h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+            <MaterialIcons name="chevron-left" size={24} color="#454651" />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setMonthEpoch(startOfMonth(now));
+              setSelectedDay(startOfDay(now));
+            }}
+            className="rounded border border-outline-variant px-sm py-xs transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+            <Text className="font-sans-medium text-body-sm text-on-surface">Today</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setMonthEpoch((m) => addMonths(m, 1))}
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
+            className="h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+            <MaterialIcons name="chevron-right" size={24} color="#454651" />
+          </Pressable>
+        </View>
+      </View>
+      <Text className="font-sans text-body-sm text-on-surface-variant">
+        Total this month: <Text className="font-mono text-on-surface">{formatHMS(monthTotalMs)}</Text>
+      </Text>
+    </View>
+  );
+
+  const calendarGrid = (
+    <View className="gap-sm">
+      {/* Weekday header */}
+      <View className="flex-row">
+        {WEEKDAY_HEADERS.map((w, i) => (
+          <Text
+            key={w}
+            className={`flex-1 text-center font-sans-semibold text-label-md ${i >= 5 ? 'text-outline' : 'text-on-surface-variant'}`}>
+            {w}
           </Text>
-          <View className="flex-row items-center gap-xs">
+        ))}
+      </View>
+      {/* Day grid (6 weeks) */}
+      <View className="flex-row flex-wrap">
+        {grid.map((dayEpoch) => {
+          const date = new Date(dayEpoch);
+          const inMonth = date.getMonth() === displayedMonth;
+          const total = dayTotals.get(dayEpoch) ?? 0;
+          const isToday = dayEpoch === startOfDay(now);
+          const isSelected = dayEpoch === selectedDay;
+          return (
             <Pressable
-              onPress={() => setMonthEpoch((m) => addMonths(m, -1))}
-              accessibilityRole="button"
-              accessibilityLabel="Previous month"
-              className="h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
-              <MaterialIcons name="chevron-left" size={24} color="#454651" />
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                setMonthEpoch(startOfMonth(now));
-                setSelectedDay(startOfDay(now));
-              }}
-              className="rounded border border-outline-variant px-sm py-xs transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
-              <Text className="font-sans-medium text-body-sm text-on-surface">Today</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setMonthEpoch((m) => addMonths(m, 1))}
-              accessibilityRole="button"
-              accessibilityLabel="Next month"
-              className="h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
-              <MaterialIcons name="chevron-right" size={24} color="#454651" />
-            </Pressable>
-          </View>
-        </View>
-        <Text className="font-sans text-body-sm text-on-surface-variant">
-          Total this month: <Text className="font-mono text-on-surface">{formatHMS(monthTotalMs)}</Text>
-        </Text>
-
-        {/* Weekday header */}
-        <View className="flex-row">
-          {WEEKDAY_HEADERS.map((w, i) => (
-            <Text
-              key={w}
-              className={`flex-1 text-center font-sans-semibold text-label-md ${i >= 5 ? 'text-outline' : 'text-on-surface-variant'}`}>
-              {w}
-            </Text>
-          ))}
-        </View>
-
-        {/* Day grid (6 weeks) */}
-        <View className="flex-row flex-wrap">
-          {grid.map((dayEpoch) => {
-            const date = new Date(dayEpoch);
-            const inMonth = date.getMonth() === displayedMonth;
-            const total = dayTotals.get(dayEpoch) ?? 0;
-            const isToday = dayEpoch === startOfDay(now);
-            const isSelected = dayEpoch === selectedDay;
-            return (
-              <Pressable
-                key={dayEpoch}
-                onPress={() => setSelectedDay(dayEpoch)}
-                style={{ width: `${100 / 7}%` }}
-                className="aspect-square p-base">
-                <View
-                  className={`flex-1 items-center justify-center rounded-lg ${
-                    isSelected ? 'bg-primary' : isToday ? 'bg-primary-fixed' : ''
+              key={dayEpoch}
+              onPress={() => setSelectedDay(dayEpoch)}
+              style={{ width: `${100 / 7}%` }}
+              className="aspect-square p-base">
+              <View
+                className={`flex-1 items-center justify-center rounded-lg ${
+                  isSelected ? 'bg-primary' : isToday ? 'bg-primary-fixed' : total > 0 ? 'bg-surface-container' : ''
+                }`}>
+                <Text
+                  className={`font-sans-medium text-body-sm ${
+                    isSelected
+                      ? 'text-on-primary'
+                      : isToday
+                        ? 'text-on-primary-fixed'
+                        : inMonth
+                          ? 'text-on-surface'
+                          : 'text-outline'
                   }`}>
-                  <Text
-                    className={`font-sans-medium text-body-sm ${
-                      isSelected
-                        ? 'text-on-primary'
-                        : isToday
-                          ? 'text-on-primary-fixed'
-                          : inMonth
-                            ? 'text-on-surface'
-                            : 'text-outline'
-                    }`}>
-                    {date.getDate()}
-                  </Text>
-                  {total > 0 ? (
-                    <View
-                      className={`mt-base h-1 w-5 rounded-full ${isSelected ? 'bg-on-primary' : 'bg-secondary'}`}
-                    />
-                  ) : (
-                    <View className="mt-base h-1 w-5" />
-                  )}
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Selected day detail */}
-        <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
-          <View className="flex-row items-center justify-between border-b border-outline-variant px-md py-sm">
-            <Text className="font-sans-semibold text-body-md text-on-surface">
-              {formatLongDate(selectedDay)}
-            </Text>
-            <View className="flex-row items-center gap-sm">
-              {selectedTotalMs > 0 ? (
-                <Text className="font-mono text-body-sm text-secondary">
-                  {formatDurationShort(selectedTotalMs)}
+                  {date.getDate()}
                 </Text>
-              ) : null}
-              <Pressable
-                onPress={() =>
-                  router.push({ pathname: '/entry', params: { date: String(selectedDay) } })
-                }
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Add entry for this day"
-                className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
-                <MaterialIcons name="add" size={22} color="#142175" />
-              </Pressable>
-            </View>
-          </View>
+                {total > 0 ? (
+                  isWide ? (
+                    <Text
+                      className={`mt-base font-mono text-[11px] ${isSelected ? 'text-on-primary' : 'text-secondary'}`}
+                      numberOfLines={1}>
+                      {compactDur(total)}
+                    </Text>
+                  ) : (
+                    <View className={`mt-base h-1 w-5 rounded-full ${isSelected ? 'bg-on-primary' : 'bg-secondary'}`} />
+                  )
+                ) : (
+                  <View className="mt-base h-1 w-5" />
+                )}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
 
-          {selectedEntries.length === 0 ? (
-            <View className="items-center gap-xs px-md py-xl">
-              <MaterialIcons name="event-busy" size={32} color="#767682" />
-              <Text className="font-sans text-body-md text-on-surface-variant">
-                No time entries for this day.
-              </Text>
-              <Pressable
-                onPress={() =>
-                  router.push({ pathname: '/entry', params: { date: String(selectedDay) } })
-                }>
-                <Text className="font-sans-medium text-body-sm text-primary">Log time manually</Text>
-              </Pressable>
-            </View>
-          ) : (
-            selectedEntries.map((e) => (
-              <EntryRow
-                key={e.id}
-                entry={e}
-                onPress={() => router.push({ pathname: '/entry', params: { id: e.id } })}
-              />
-            ))
-          )}
+  const selectedDetail = (
+    <View className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
+      <View className="flex-row items-center justify-between border-b border-outline-variant px-md py-sm">
+        <Text className="font-sans-semibold text-body-md text-on-surface">{formatLongDate(selectedDay)}</Text>
+        <View className="flex-row items-center gap-sm">
+          {selectedTotalMs > 0 ? (
+            <Text className="font-mono text-body-sm text-secondary">{formatDurationShort(selectedTotalMs)}</Text>
+          ) : null}
+          <Pressable
+            onPress={() => router.push({ pathname: '/entry', params: { date: String(selectedDay) } })}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Add entry for this day"
+            className="h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-low active:bg-surface-container-low">
+            <MaterialIcons name="add" size={22} color="#142175" />
+          </Pressable>
         </View>
-      </ScrollView>
+      </View>
+
+      {selectedEntries.length === 0 ? (
+        <View className="items-center gap-xs px-md py-xl">
+          <MaterialIcons name="event-busy" size={32} color="#767682" />
+          <Text className="font-sans text-body-md text-on-surface-variant">No time entries for this day.</Text>
+          <Pressable onPress={() => router.push({ pathname: '/entry', params: { date: String(selectedDay) } })}>
+            <Text className="font-sans-medium text-body-sm text-primary">Log time manually</Text>
+          </Pressable>
+        </View>
+      ) : (
+        selectedEntries.map((e) => (
+          <EntryRow key={e.id} entry={e} onPress={() => router.push({ pathname: '/entry', params: { id: e.id } })} />
+        ))
+      )}
+    </View>
+  );
+
+  return (
+    <Screen maxWidth={isWide ? 1180 : 880}>
+      <AppHeader title="Calendar" />
+      {isWide ? (
+        <ScrollView contentContainerClassName="p-md">
+          <View className="flex-row" style={{ gap: 28 }}>
+            <View className="flex-1 gap-md">
+              {monthHeader}
+              {calendarGrid}
+            </View>
+            <View style={{ width: 360 }}>{selectedDetail}</View>
+          </View>
+        </ScrollView>
+      ) : (
+        <ScrollView contentContainerClassName="p-md gap-md">
+          {monthHeader}
+          {calendarGrid}
+          {selectedDetail}
+        </ScrollView>
+      )}
     </Screen>
   );
 }
